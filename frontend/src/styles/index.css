@@ -307,12 +307,9 @@ input, select, textarea { font: inherit; color: inherit; }
     width: 100%;
     max-width: 100%;
     min-width: 0;
-    /* Clip the floating-card spillover inside the visual square — keeps the
-       overlap effect on desktop without breaking the layout on narrow viewports
-       or in RTL where the negative transforms can push cards into adjacent
-       grid tracks. */
-    overflow: hidden;
-    border-radius: 32px;
+    /* No overflow clip here — cards SHOULD float past the square as a design
+       feature. Page-level horizontal scroll is prevented by html/body
+       overflow-x: clip + .hero-grid > * { min-width: 0 } below. */
   }
   /* Grid children must allow shrinking below their content size — otherwise the
      absolute hero-visual + transformed cards can push the column past the
@@ -326,14 +323,13 @@ input, select, textarea { font: inherit; color: inherit; }
     transition: transform 1.2s var(--ease-out);
     transform-style: preserve-3d;
   }
-  /* On narrow viewports, dampen the card translation so they don't disappear
-     behind the visual's clipped edges. */
+  /* On narrow viewports just give the visual breathing room — keep the
+     floating-cards effect, don't clip. */
   @media (max-width: 800px) {
     .hero-visual {
-      max-width: min(420px, 86vw);
+      max-width: min(460px, 90vw);
       margin-inline: auto;
     }
-    .hero-card { width: 78%; }
   }
   .hero-card:nth-child(1) { transform: translate(-22%, -8%) rotate(-14deg); z-index: 1; }
   .hero-card:nth-child(2) { transform: translate(8%, 12%) rotate(8deg); z-index: 2; }
