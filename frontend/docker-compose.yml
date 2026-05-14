@@ -1,0 +1,8 @@
+services:
+  frontend:
+    build: .
+    image: t-card-frontend:latest
+    container_name: t-card-frontend
+    ports:
+      - "8080:80"
+    restart: unless-stopped

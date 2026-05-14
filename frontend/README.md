@@ -1,0 +1,74 @@
+# T-Card Frontend
+
+Production-ready React + TypeScript + Tailwind frontend for T-Card — a digital gift-card storefront with bilingual EN/FA + RTL support, light/dark theme, persistent cart, and full checkout flow.
+
+## Stack
+
+- **React 18** + **TypeScript** (Vite 5)
+- **Tailwind CSS v3** (Tailwind-first; tokens via CSS variables)
+- **react-router-dom v6** with `HashRouter` (`#/shop`, `#/product/:id`, …)
+- **localStorage** persistence for theme, language, cart, orders
+- No backend required
+
+## Develop
+
+```bash
+npm install
+npm run dev
+```
+
+Opens at <http://localhost:5173>.
+
+## Build
+
+```bash
+npm run build      # type-check + production bundle to dist/
+npm run preview    # serve the production bundle locally
+```
+
+## Docker
+
+```bash
+docker compose up --build
+```
+
+Opens at <http://localhost:8080>. The image is multi-stage (Node build → nginx serve).
+
+## Routes
+
+| Path | Page |
+|---|---|
+| `/` | Home |
+| `/shop` | Shop catalog (filters, sort, search) |
+| `/shop?cat=gaming` | Pre-filtered shop |
+| `/product/:id` | Product detail |
+| `/cart` | Opens cart drawer over Home |
+| `/checkout` | 3-step checkout wizard |
+| `/confirmation/:id` | Order confirmation |
+| `/about`, `/faq`, `/contact`, `/how`, `/account` | Misc pages |
+| `/terms`, `/privacy`, `/cookies` | Legal pages |
+| any other | 404 |
+
+## Folder Layout
+
+```
+src/
+├── main.tsx              # Bootstraps app + HashRouter + AppProvider
+├── App.tsx               # Routes + layout
+├── context/AppContext.tsx
+├── data/                 # brands, categories, i18n, testimonials, faqs, format
+├── components/
+│   ├── layout/           # Header, Footer, CartDrawer
+│   ├── ui/               # Icon, Logo, Reveal, Toast
+│   └── product/          # GCard, CardPattern, ProductTile
+├── hooks/                # useLocalStorage, useReveal, useT
+├── pages/                # Home, Shop, Product, Checkout, …
+└── styles/index.css      # tokens + Tailwind layers + component CSS
+```
+
+## Persistence Keys
+
+- `tcard.theme` — `light | dark`
+- `tcard.lang` — `en | fa`
+- `tcard.cart` — JSON array of cart items
+- `tcard.orders` — JSON array of placed orders
