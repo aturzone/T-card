@@ -18,27 +18,32 @@ export function CardPattern({ brandId }: CardPatternProps) {
   const ic = brandIcon(brandId);
 
   if (ic) {
-    // Huge blurred brand glyph as a watermark
+    // Huge blurred brand glyph as a watermark + bold crisp mark
     return (
       <svg viewBox="0 0 400 250" preserveAspectRatio="xMaxYMid slice" style={{ width: '100%', height: '100%' }}>
         <defs>
-          <filter id={`blur-${brandId}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
+          <filter id={`blur-${brandId}`} x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="4" />
           </filter>
+          <radialGradient id={`glow-${brandId}`} cx="80%" cy="30%" r="60%">
+            <stop offset="0%" stopColor="white" stopOpacity="0.22" />
+            <stop offset="60%" stopColor="white" stopOpacity="0.05" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
+          </radialGradient>
         </defs>
-        {/* Soft radial glow */}
-        <circle cx="340" cy="50" r="160" fill="white" opacity="0.06" />
-        {/* Big blurred brand mark */}
+        {/* Soft radial glow behind the watermark */}
+        <rect width="400" height="250" fill={`url(#glow-${brandId})`} />
+        {/* Big blurred brand mark — readable shape, sits behind */}
         <g
-          transform="translate(220, -30) scale(11)"
+          transform="translate(120, -60) scale(14)"
           fill="white"
-          opacity="0.18"
+          opacity="0.42"
           filter={`url(#blur-${brandId})`}
         >
           <path d={ic.path} />
         </g>
-        {/* Crisp accent mark on top, faint */}
-        <g transform="translate(290, 30) scale(4.5)" fill="white" opacity="0.08">
+        {/* Secondary crisp echo — adds the brand silhouette without overpowering */}
+        <g transform="translate(250, 20) scale(6)" fill="white" opacity="0.18">
           <path d={ic.path} />
         </g>
       </svg>
