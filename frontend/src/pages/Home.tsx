@@ -17,7 +17,7 @@ export function Home() {
   return (
     <main className="page">
       {/* HERO */}
-      <section className="container-x relative overflow-hidden" style={{ paddingBlock: 'clamp(60px, 10vw, 120px) clamp(40px, 6vw, 80px)' }}>
+      <section className="container-x relative" style={{ paddingBlock: 'clamp(60px, 10vw, 120px) clamp(40px, 6vw, 80px)' }}>
         <div className="hero-ambient" aria-hidden="true" />
         <div className="hero-grid grid items-center gap-10 lg:gap-[80px] lg:[grid-template-columns:1.1fr_1fr]">
           <div>
