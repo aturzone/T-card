@@ -18,27 +18,11 @@ export function CardPattern({ brandId }: CardPatternProps) {
   const ic = brandIcon(brandId);
 
   if (ic) {
-    // Huge blurred brand glyph as a watermark
+    // Crisp brand glyph watermark in the corner
     return (
       <svg viewBox="0 0 400 250" preserveAspectRatio="xMaxYMid slice" style={{ width: '100%', height: '100%' }}>
-        <defs>
-          <filter id={`blur-${brandId}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
-          </filter>
-        </defs>
-        {/* Soft radial glow */}
-        <circle cx="340" cy="50" r="160" fill="white" opacity="0.06" />
-        {/* Big blurred brand mark */}
-        <g
-          transform="translate(220, -30) scale(11)"
-          fill="white"
-          opacity="0.18"
-          filter={`url(#blur-${brandId})`}
-        >
-          <path d={ic.path} />
-        </g>
-        {/* Crisp accent mark on top, faint */}
-        <g transform="translate(290, 30) scale(4.5)" fill="white" opacity="0.08">
+        {/* Crisp accent mark */}
+        <g transform="translate(290, 30) scale(4.5)" fill="white" opacity="0.85">
           <path d={ic.path} />
         </g>
       </svg>

@@ -356,7 +356,7 @@ input, select, textarea { font: inherit; color: inherit; }
   .gcard-chip::before { left: 6px; right: 6px; top: 9px; height: 1px; }
   .gcard-chip::after { left: 6px; right: 6px; top: 18px; height: 1px; }
   .gcard-amount { @apply font-display; font-size: 36px; letter-spacing: -.02em; }
-  .gcard-pattern { position: absolute; inset: 0; z-index: 1; opacity: .20; mix-blend-mode: overlay; pointer-events: none; }
+  .gcard-pattern { position: absolute; inset: 0; z-index: 1; opacity: .65; mix-blend-mode: soft-light; pointer-events: none; }
   .gcard-shine {
     position: absolute; inset: 0; z-index: 3; pointer-events: none;
     background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.18) 50%, transparent 60%);
