@@ -618,7 +618,7 @@ input, select, textarea { font: inherit; color: inherit; }
         transparent 60%
       ),
       radial-gradient(
-        ellipse 50% 45% at 5% 100%,
+        ellipse 50% 45% at 5% 0%,
         color-mix(in oklch, var(--gold) 14%, transparent) 0%,
         transparent 60%
       );
@@ -632,7 +632,7 @@ input, select, textarea { font: inherit; color: inherit; }
         transparent 60%
       ),
       radial-gradient(
-        ellipse 50% 45% at 95% 100%,
+        ellipse 50% 45% at 95% 0%,
         color-mix(in oklch, var(--gold) 14%, transparent) 0%,
         transparent 60%
       );
@@ -643,12 +643,12 @@ input, select, textarea { font: inherit; color: inherit; }
     .hero-ambient {
       background:
         radial-gradient(ellipse 80% 40% at 100% 0%, color-mix(in oklch, var(--accent) 14%, transparent) 0%, transparent 65%),
-        radial-gradient(ellipse 70% 35% at 0% 100%, color-mix(in oklch, var(--gold) 10%, transparent) 0%, transparent 65%);
+        radial-gradient(ellipse 70% 35% at 0% 0%, color-mix(in oklch, var(--gold) 10%, transparent) 0%, transparent 65%);
     }
     html[dir="rtl"] .hero-ambient {
       background:
         radial-gradient(ellipse 80% 40% at 0% 0%, color-mix(in oklch, var(--accent) 14%, transparent) 0%, transparent 65%),
-        radial-gradient(ellipse 70% 35% at 100% 100%, color-mix(in oklch, var(--gold) 10%, transparent) 0%, transparent 65%);
+        radial-gradient(ellipse 70% 35% at 100% 0%, color-mix(in oklch, var(--gold) 10%, transparent) 0%, transparent 65%);
     }
   }
 
