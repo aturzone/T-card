@@ -20,10 +20,10 @@ export function Home() {
       <section className="container-x relative overflow-hidden" style={{ paddingBlock: 'clamp(60px, 10vw, 120px) clamp(40px, 6vw, 80px)' }}>
         <div className="bg-blob" style={{ width: 360, height: 360, background: 'var(--accent)', top: -140, right: -160, opacity: 0.07 }} />
         <div className="bg-blob" style={{ width: 260, height: 260, background: 'var(--gold)', bottom: -120, left: -120, opacity: 0.05 }} />
-        <div className="grid items-center gap-10 lg:gap-[80px] lg:[grid-template-columns:1.1fr_1fr]">
+        <div className="hero-grid grid items-center gap-10 lg:gap-[80px] lg:[grid-template-columns:1.1fr_1fr]">
           <div>
             <div className="eyebrow">{t('hero_eyebrow')}</div>
-            <h1 className="display text-hero" style={{ marginTop: 18 }}>
+            <h1 className="display hero-title text-hero" style={{ marginTop: 18 }}>
               {t('hero_title_a')}<br />
               <span className="italic" style={{ color: 'var(--accent)' }}>{t('hero_title_b')}</span>
             </h1>
