@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 
 /**
@@ -55,7 +56,7 @@ export default defineConfig({
 });
 
 // Hint for users on machines where neither bundled chromium nor brave exist.
-if (!executablePath && !require('node:fs').existsSync(braveDefault)) {
+if (!executablePath && !existsSync(braveDefault)) {
   // eslint-disable-next-line no-console
   console.warn(
     '\n[playwright] No bundled chromium + no Brave at',
