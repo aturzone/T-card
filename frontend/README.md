@@ -34,6 +34,24 @@ docker compose up --build
 
 Opens at <http://localhost:8080>. The image is multi-stage (Node build → nginx serve).
 
+## Tests
+
+Two layers:
+
+```bash
+npm test          # vitest — 25 integration tests, runs in ~1.5s (no browser)
+npm run test:e2e  # playwright — real-browser e2e (requires a browser binary)
+```
+
+**Vitest** (`tests/*.test.tsx`) — boots the full app in happy-dom + MemoryRouter, walks every route, exercises theme toggle, language switch (EN ↔ FA + RTL flip), localStorage persistence, cart add/remove, shop filters, FAQ accordion, and checkout empty state. Fast smoke net for any React crash regression.
+
+**Playwright** (`tests/e2e/*.spec.ts`) — real browser, hits every hash route + runs the cart→checkout flow. If `npx playwright install chromium` fails on your distro (Ubuntu 26.04 was unsupported at the time of writing), point Chromium at any Chromium-family browser:
+
+```bash
+export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/snap/brave/current/opt/brave.com/brave/brave
+npm run test:e2e
+```
+
 ## Routes
 
 | Path | Page |
