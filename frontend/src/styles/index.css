@@ -593,41 +593,56 @@ input, select, textarea { font: inherit; color: inherit; }
     border-radius: var(--radius-sm);
   }
 
-  /* Bg blob — responsive ambient halo behind the hero. Sized in vmin so it
-     scales naturally with the smallest viewport dimension; blur radius and
-     opacity also adjust per breakpoint. */
-  .bg-blob {
+  /* Hero ambient — full-coverage radial gradients, not fixed-size circular
+     blobs. Two soft glows: accent in the trailing-top corner, gold in the
+     leading-bottom corner. Scales perfectly with viewport, no visible edges.
+
+     The hero <section> still gets `position: relative` from the React markup,
+     so the absolutely-positioned ::before just paints behind the grid. */
+  .hero-ambient {
     position: absolute;
-    pointer-events: none;
+    inset: 0;
     z-index: 0;
-    border-radius: 50%;
-    filter: blur(72px);
-    will-change: transform;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 60% 50% at 95% 0%,
+        color-mix(in oklch, var(--accent) 18%, transparent) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse 50% 45% at 5% 100%,
+        color-mix(in oklch, var(--gold) 14%, transparent) 0%,
+        transparent 60%
+      );
+    /* Auto-flip in RTL: swap the two corner anchors */
   }
-  .hero-blob-a {
-    width: clamp(220px, 42vmin, 520px);
-    height: clamp(220px, 42vmin, 520px);
-    top: clamp(-180px, -16vmin, -100px);
-    inset-inline-end: clamp(-200px, -18vmin, -120px);
-    background: var(--accent);
-    opacity: 0.08;
+  html[dir="rtl"] .hero-ambient {
+    background:
+      radial-gradient(
+        ellipse 60% 50% at 5% 0%,
+        color-mix(in oklch, var(--accent) 18%, transparent) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        ellipse 50% 45% at 95% 100%,
+        color-mix(in oklch, var(--gold) 14%, transparent) 0%,
+        transparent 60%
+      );
   }
-  .hero-blob-b {
-    width: clamp(180px, 34vmin, 420px);
-    height: clamp(180px, 34vmin, 420px);
-    bottom: clamp(-160px, -14vmin, -90px);
-    inset-inline-start: clamp(-160px, -14vmin, -90px);
-    background: var(--gold);
-    opacity: 0.06;
-  }
+  /* Make sure the hero grid sits above the ambient layer */
+  .hero-grid { position: relative; z-index: 1; }
   @media (max-width: 700px) {
-    .bg-blob { filter: blur(60px); }
-    .hero-blob-a { opacity: 0.06; }
-    .hero-blob-b { opacity: 0.04; }
-  }
-  @media (max-width: 420px) {
-    /* On very small screens the blobs read as splotches — hide them entirely. */
-    .hero-blob-a, .hero-blob-b { display: none; }
+    .hero-ambient {
+      background:
+        radial-gradient(ellipse 80% 40% at 100% 0%, color-mix(in oklch, var(--accent) 14%, transparent) 0%, transparent 65%),
+        radial-gradient(ellipse 70% 35% at 0% 100%, color-mix(in oklch, var(--gold) 10%, transparent) 0%, transparent 65%);
+    }
+    html[dir="rtl"] .hero-ambient {
+      background:
+        radial-gradient(ellipse 80% 40% at 0% 0%, color-mix(in oklch, var(--accent) 14%, transparent) 0%, transparent 65%),
+        radial-gradient(ellipse 70% 35% at 100% 100%, color-mix(in oklch, var(--gold) 10%, transparent) 0%, transparent 65%);
+    }
   }
 
   html[dir="rtl"] .nav a::after { transform-origin: center; }
