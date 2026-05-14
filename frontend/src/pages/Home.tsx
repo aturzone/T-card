@@ -18,8 +18,8 @@ export function Home() {
     <main className="page">
       {/* HERO */}
       <section className="container-x relative overflow-hidden" style={{ paddingBlock: 'clamp(60px, 10vw, 120px) clamp(40px, 6vw, 80px)' }}>
-        <div className="bg-blob" style={{ width: 420, height: 420, background: 'var(--accent)', top: -140, right: -160, opacity: 0.07 }} />
-        <div className="bg-blob" style={{ width: 360, height: 360, background: 'var(--gold)', bottom: -120, left: -120, opacity: 0.05 }} />
+        <div className="bg-blob hero-blob-a" aria-hidden="true" />
+        <div className="bg-blob hero-blob-b" aria-hidden="true" />
         <div className="hero-grid grid items-center gap-10 lg:gap-[80px] lg:[grid-template-columns:1.1fr_1fr]">
           <div>
             <div className="eyebrow">{t('hero_eyebrow')}</div>

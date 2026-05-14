@@ -593,11 +593,41 @@ input, select, textarea { font: inherit; color: inherit; }
     border-radius: var(--radius-sm);
   }
 
-  /* Bg blob */
+  /* Bg blob — responsive ambient halo behind the hero. Sized in vmin so it
+     scales naturally with the smallest viewport dimension; blur radius and
+     opacity also adjust per breakpoint. */
   .bg-blob {
-    position: absolute; pointer-events: none; z-index: 0;
+    position: absolute;
+    pointer-events: none;
+    z-index: 0;
     border-radius: 50%;
-    filter: blur(80px); opacity: .35;
+    filter: blur(72px);
+    will-change: transform;
+  }
+  .hero-blob-a {
+    width: clamp(220px, 42vmin, 520px);
+    height: clamp(220px, 42vmin, 520px);
+    top: clamp(-180px, -16vmin, -100px);
+    inset-inline-end: clamp(-200px, -18vmin, -120px);
+    background: var(--accent);
+    opacity: 0.08;
+  }
+  .hero-blob-b {
+    width: clamp(180px, 34vmin, 420px);
+    height: clamp(180px, 34vmin, 420px);
+    bottom: clamp(-160px, -14vmin, -90px);
+    inset-inline-start: clamp(-160px, -14vmin, -90px);
+    background: var(--gold);
+    opacity: 0.06;
+  }
+  @media (max-width: 700px) {
+    .bg-blob { filter: blur(60px); }
+    .hero-blob-a { opacity: 0.06; }
+    .hero-blob-b { opacity: 0.04; }
+  }
+  @media (max-width: 420px) {
+    /* On very small screens the blobs read as splotches — hide them entirely. */
+    .hero-blob-a, .hero-blob-b { display: none; }
   }
 
   html[dir="rtl"] .nav a::after { transform-origin: center; }
