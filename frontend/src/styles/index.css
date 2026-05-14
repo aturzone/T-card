@@ -601,7 +601,14 @@ input, select, textarea { font: inherit; color: inherit; }
      so the absolutely-positioned ::before just paints behind the grid. */
   .hero-ambient {
     position: absolute;
-    inset: 0;
+    /* Span the full viewport width, ignoring the parent container's max-width
+       (1400px) and side padding. The 50%/translateX(-50%) trick anchors the
+       layer to the viewport instead of the container. */
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
     z-index: 0;
     pointer-events: none;
     background:
