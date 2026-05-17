@@ -121,8 +121,16 @@ export function Home() {
               fades in/out around its stage boundary so the swap reads as a
               soft cross-dissolve, not a jump. */}
           {STAGES.map((s, i) => {
-            const dist = Math.abs(p * 4 - i - 0.5);
-            const op = Math.max(0, 1 - dist * 1.4);
+            // Plateau opacity: full 1 for ~80% of the stage range with a
+            // 20% fade-in/out at the stage boundaries. Means stage 0 is
+            // fully readable at p=0 (mobile + initial load).
+            const d = p * 4 - i;
+            const op =
+              d < -0.2 ? 0 :
+              d < 0 ? (d + 0.2) / 0.2 :
+              d < 0.8 ? 1 :
+              d < 1 ? (1 - d) / 0.2 :
+              0;
             return (
               <h1
                 key={i}

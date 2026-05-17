@@ -562,12 +562,16 @@ input, select, textarea { font: inherit; color: inherit; }
     z-index: 3;
   }
   @media (max-width: 768px) {
+    /* On mobile, collapse the 400vh scrolljack to a single viewport — no
+       WebGL bust, just the static silhouette + lockup + captions. The
+       sticky stage flattens because min-height is reduced. */
+    .hero-cinema {
+      min-height: 100vh !important;
+    }
     .hero-cinema .hero-lockup {
       mix-blend-mode: normal;
       font-size: clamp(64px, 16vw, 120px);
-      top: 14vh;
     }
-    .hero-cinema { min-height: 90vh; }
     .mono-corner { font-size: 10px; }
   }
 
