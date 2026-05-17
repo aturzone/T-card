@@ -4,7 +4,7 @@ import { useGLTF, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 
 useGLTF.setDecoderPath('/draco/');
-useGLTF.preload('/models/bust.glb', true);
+useGLTF.preload('/models/bust_smooth_draco.glb', true);
 
 export type Statue3DProps = {
   scrollProgress: () => number;
@@ -24,9 +24,6 @@ type Keyframe = {
   camZ: number;
 };
 
-// First-pass keyframes derived from monolithstudio.com captures (ref-monolith-s*.png).
-// p = 0..1 progress through the pinned hero region. The bust rests at p=0
-// (facing camera, centered) and snaps poses on scroll.
 const KEYS: Keyframe[] = [
   { p: 0.00, rotY:  0.00, rotX:  0.00, posX:  0.00, posY:  0.00, scale: 1.00, camZ: 6.4 },
   { p: 0.20, rotY:  0.45, rotX:  0.10, posX:  0.55, posY: -0.10, scale: 1.10, camZ: 5.6 },
@@ -56,37 +53,31 @@ function sample(p: number) {
   };
 }
 
-// With both X (+π/2) and Z (+π/2) baked into the cloned mesh, the face ends
-// up pointing world -Z (away from camera). Outer group Y rotation of π flips
-// it 180° to world +Z (toward camera) at the rotY=0 keyframe.
 const FACE_FORWARD_Y = Math.PI;
-
-// Pre-Z rotation around X to flip the bust so the head points up and the
-// torso cut faces down. The sign is +π/2 — verified empirically (-π/2 puts
-// the bust head-down).
 const STAND_UPRIGHT_X = Math.PI / 2;
+
+// Two related shades for the bust + pedestal. The pedestal reads slightly
+// cooler and grittier so it feels like a stone base, not a bone-white
+// continuation of the figure.
+const MARBLE_COLOR = '#d8cdb5';
+const PEDESTAL_COLOR = '#b8b1a3';
 
 function Bust({ scrollProgress }: BustProps) {
   const ref = useRef<THREE.Group>(null);
-  const { scene } = useGLTF('/models/bust.glb') as unknown as {
+  const { scene } = useGLTF('/models/bust_smooth_draco.glb') as unknown as {
     scene: THREE.Group;
   };
 
-  // Bake the orientation fix into the cloned mesh so the bust is upright
-  // and facing the camera at the rotY=0 keyframe:
-  //   - rotate +π/2 around Z to stand the bust upright (its tall axis is +X
-  //     in the GLB — laid on its side natively)
-  //   - rotate +π/2 around Y to bring the carved face toward -Z (camera)
-  // The outer group ref then applies per-stage rotY around world Y.
-  const { cloned, normScale, cutBottom } = useMemo(() => {
+  const { cloned, normScale, cutBottom, bbox } = useMemo(() => {
     const c = scene.clone(true);
-    // Bake both orientation fixes:
-    //   - X rotation: head up, cut perpendicular to the floor (-π/2 around X)
-    //   - Z rotation: stand the bust upright (its tall axis is +X in the GLB)
-    // Three.js Euler default order is 'XYZ' (intrinsic), so X is applied
-    // first, then the rotated Z axis takes the bust upright.
     c.rotation.set(STAND_UPRIGHT_X, 0, Math.PI / 2);
     c.updateMatrixWorld(true);
+
+    // bust_smooth_draco.glb is pre-subdivided (Catmull-Clark, 2 levels) in
+    // Blender — see frontend/scripts/smooth-bust.py. No JS-side mergeVertices
+    // or normal recompute needed; doing so would clobber Blender's careful
+    // smooth shading.
+
     const box = new THREE.Box3().setFromObject(c);
     const size = new THREE.Vector3();
     box.getSize(size);
@@ -99,23 +90,28 @@ function Bust({ scrollProgress }: BustProps) {
       cloned: c,
       normScale: n,
       cutBottom: -size.y * n / 2,
+      bbox: { x: size.x, y: size.y, z: size.z },
     };
   }, [scene]);
 
-  // Single-palette marble — cream-warm so it reads as sculpture against
-  // the #e0e0e0 monolith-grey canvas. No theme branch.
+  // Aged marble material — closer to the monolith reference (cooler tone,
+  // higher roughness, subtle clearcoat for soft highlights only on the
+  // brightest planes).
   useMemo(() => {
     cloned.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (mesh.isMesh) {
         mesh.material = new THREE.MeshPhysicalMaterial({
-          color: '#ece5d4',
-          roughness: 0.52,
+          color: MARBLE_COLOR,
+          roughness: 0.72,
           metalness: 0.0,
-          sheen: 0.08,
-          sheenColor: new THREE.Color('#f0e2c2'),
-          emissive: new THREE.Color('#1a1612'),
-          emissiveIntensity: 0.08,
+          sheen: 0.05,
+          sheenColor: new THREE.Color('#e8dec6'),
+          clearcoat: 0.08,
+          clearcoatRoughness: 0.6,
+          emissive: new THREE.Color('#1c1812'),
+          emissiveIntensity: 0.04,
+          flatShading: false,
         });
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -123,9 +119,14 @@ function Bust({ scrollProgress }: BustProps) {
     });
   }, [cloned]);
 
-  // Scroll-bound. No `dt`, no time accumulator, no Math.sin. Every transform
-  // is a pure function of scrollProgress() — bust is stone-still when scroll
-  // is stone-still.
+  // Pedestal dimensions, in the wrapper's pre-scale local frame (same frame
+  // the cloned bust sits in). Sized so the disc reads as a museum plinth —
+  // roughly 1/4 the bust width, ~8% the bust height.
+  const pedestalH = bbox.y * 0.09;
+  const pedestalTopR = bbox.x * 0.22;
+  const pedestalBottomR = bbox.x * 0.26;
+  const pedestalY = -bbox.y / 2 - pedestalH / 2;
+
   useFrame(({ camera }) => {
     if (!ref.current) return;
     const p = scrollProgress();
@@ -134,10 +135,10 @@ function Bust({ scrollProgress }: BustProps) {
     ref.current.rotation.y = FACE_FORWARD_Y + k.rotY;
     ref.current.rotation.x = k.rotX;
 
-    // Anchor the bust so its CUT (bottom of the torso) sits ~1 world unit
-    // below frame center — right above the contact-shadow plane at y=-1.7.
-    // Head then sits in the upper third of the viewport.
-    const cutAnchorY = -1.7 - cutBottom; // group offset so cutBottom lands at y=-1.7
+    // Anchor the bust so its CUT sits at world y=-1.7 (same as v1, before
+    // the pedestal was added). The pedestal hangs naturally below this in
+    // the group's local frame, so it appears just below the cut.
+    const cutAnchorY = -1.7 - cutBottom;
     ref.current.position.set(k.posX, cutAnchorY + k.posY, 0);
     ref.current.scale.setScalar(normScale * k.scale);
 
@@ -148,6 +149,20 @@ function Bust({ scrollProgress }: BustProps) {
   return (
     <group ref={ref}>
       <primitive object={cloned} />
+      <mesh
+        position={[0, pedestalY, 0]}
+        castShadow
+        receiveShadow
+      >
+        <cylinderGeometry args={[pedestalTopR, pedestalBottomR, pedestalH, 48, 1, false]} />
+        <meshPhysicalMaterial
+          color={PEDESTAL_COLOR}
+          roughness={0.92}
+          metalness={0.0}
+          clearcoat={0.0}
+          sheen={0.02}
+        />
+      </mesh>
     </group>
   );
 }
@@ -165,33 +180,54 @@ export default function Statue3D({ scrollProgress }: Statue3DProps) {
       dpr={[1, 2]}
       aria-hidden="true"
     >
-      {/* Single-palette canvas — matches body background (#e0e0e0) so the
-          bust dissolves into the page as a marble portrait, not a black hole. */}
       <color attach="background" args={['#e0e0e0']} />
-      <ambientLight intensity={0.55} />
-      {/* Soft key — top-right, slightly cooler than before so the marble
-          doesn't go bone-white on a light backdrop. */}
+
+      {/* Low ambient — let the directional key carve the form. The monolith
+          reference has clearly deep shadows on the recessed side of the bust. */}
+      <ambientLight intensity={0.28} color="#f0eee8" />
+
+      {/* Strong, slightly warm key from upper-right. Casts the dramatic
+          shadows that define the marble. */}
       <directionalLight
-        position={[4, 7, 5]}
-        intensity={1.8}
-        color="#fff6e3"
+        position={[5, 8, 3.5]}
+        intensity={3.4}
+        color="#fff7e6"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-bias={-0.0005}
+        shadow-bias={-0.0004}
+        shadow-camera-left={-3}
+        shadow-camera-right={3}
+        shadow-camera-top={3}
+        shadow-camera-bottom={-3}
+        shadow-camera-near={1}
+        shadow-camera-far={20}
       />
-      <directionalLight position={[-6, 1, -3]} intensity={0.6} color="#a8bcd6" />
-      <pointLight position={[2, -1, 4]} intensity={0.25} color="#fff4dc" />
+
+      {/* Cool rim from upper-back-left so the silhouette edge picks up a
+          subtle blue cast (visible on the reference's left shoulder). */}
+      <directionalLight
+        position={[-6, 4, -3]}
+        intensity={0.9}
+        color="#b0bccc"
+      />
+
+      {/* Very subtle fill from below-front so the chin/jaw isn't pitch black. */}
+      <hemisphereLight
+        args={['#d8d4c8', '#3a3833', 0.35]}
+      />
+
       <Suspense fallback={null}>
         <Bust scrollProgress={prefersReduced ? () => 0 : scrollProgress} />
         <ContactShadows
-          position={[0, -1.7, 0]}
-          opacity={0.32}
-          scale={6}
-          blur={3}
-          far={3.5}
+          position={[0, -1.95, 0]}
+          opacity={0.55}
+          scale={4}
+          blur={2.2}
+          far={2.6}
+          resolution={1024}
         />
-        <Environment preset="apartment" />
+        <Environment preset="studio" environmentIntensity={0.35} />
       </Suspense>
     </Canvas>
   );
