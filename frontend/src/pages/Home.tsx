@@ -51,7 +51,10 @@ export function Home() {
   const featured = BRANDS.slice(0, 4);
 
   const heroRef = useRef<HTMLElement>(null);
-  const scrollProgress = useScrollProgress(heroRef);
+  // Header is 72 px (see .header-inner in index.css). Pass it so the hook
+  // doesn't ignore the first 72 px of scroll while the section is settling
+  // into its sticky position.
+  const scrollProgress = useScrollProgress(heroRef, 72);
   const time = useTehranClock(lang);
 
   const [show3D, setShow3D] = useState(false);
@@ -129,8 +132,8 @@ export function Home() {
         style={{ height: heroHeight }}
       >
         <div
-          className="hero-sticky sticky top-0 w-full overflow-hidden"
-          style={{ height: '100vh' }}
+          className="hero-sticky sticky w-full overflow-hidden"
+          style={{ top: 'var(--header-h, 72px)', height: 'calc(100vh - var(--header-h, 72px))' }}
         >
           {/* L0 — Full-bleed bust canvas */}
           <div className="absolute inset-0" style={{ zIndex: 0 }}>
@@ -183,7 +186,7 @@ export function Home() {
           {/* L2 — Mono corner captions (museum specimen card) */}
           <div
             className="container-x relative h-full"
-            style={{ zIndex: 3, height: '100vh' }}
+            style={{ zIndex: 3 }}
           >
             <div
               className="absolute mono-corner"
