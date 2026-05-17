@@ -43,3 +43,8 @@ yarn-error.log*
 # Misc
 *.pid
 *.seed
+.playwright-mcp/
+
+# Offline deploy bundle — image .tar.gz too large for git
+release/*.tar.gz
+release/*.zip
