@@ -7,6 +7,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ProductTile } from '@/components/product/ProductTile';
 import { useScrollProgress } from '@/hooks/useScrollProgress';
 import { BRANDS } from '@/data/brands';
+import { brandIcon } from '@/data/brand-icons';
 import { CATEGORIES } from '@/data/categories';
 import { TESTIMONIALS } from '@/data/testimonials';
 import type { I18NKey } from '@/data/i18n';
@@ -510,11 +511,133 @@ export function Home() {
         </div>
       </section>
 
+      {/* BRANDS — full-bleed dark section, monolith "MEET THE ARTISTS" analog */}
+      <section
+        className="brands-dark"
+        style={{ background: 'var(--ink)', color: 'var(--bg)' }}
+      >
+        <div className="container-x section-padding">
+          <div
+            style={{
+              paddingTop: 24,
+              marginBottom: 40,
+              borderTop: '1px solid rgba(232,229,224,.18)',
+            }}
+          >
+            <div
+              className="font-mono uppercase text-[11px]"
+              style={{ letterSpacing: '.08em', opacity: 0.55 }}
+            >
+              {lang === 'fa' ? 'برندها' : 'BRANDS'} — 02
+            </div>
+            <h2
+              className="font-display"
+              style={{
+                fontSize: 'var(--fs-hero)',
+                fontWeight: 700,
+                letterSpacing: '-.04em',
+                lineHeight: 0.95,
+                marginTop: 18,
+                color: 'var(--bg)',
+              }}
+            >
+              {lang === 'fa' ? 'برندهای ما را بشناسید' : 'MEET THE BRANDS'}
+            </h2>
+            <div
+              className="flex justify-between items-end gap-6 flex-wrap"
+              style={{ marginTop: 18 }}
+            >
+              <p style={{ opacity: 0.7, maxWidth: '52ch', fontSize: 16 }}>
+                {lang === 'fa'
+                  ? '۸۰+ برند جهانی، دست‌چین شده برای بازار ایران — از گیمینگ تا استریمینگ تا خرید روزمره.'
+                  : '80+ partners curated for the Iranian market, from gaming to streaming to everyday retail.'}
+              </p>
+              <button
+                onClick={() => navigate('/shop')}
+                className="font-mono uppercase text-[12px]"
+                style={{ letterSpacing: '.08em', color: 'var(--bg)', opacity: 0.85 }}
+              >
+                {t('view_all')} →
+              </button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4" style={{ gap: 16 }}>
+            {(['amazon', 'google-play', 'steam', 'playstation', 'netflix', 'spotify', 'youtube-premium', 'razer-gold']
+              .map((id) => BRANDS.find((b) => b.id === id))
+              .filter((b): b is NonNullable<typeof b> => Boolean(b))
+            ).map((b, i) => {
+              const ic = brandIcon(b.id);
+              const cat = CATEGORIES.find((c) => c.id === b.cat);
+              return (
+                <Reveal key={b.id} delay={i * 60}>
+                  <a href={`#/product/${b.id}`} className="block group">
+                    <div
+                      className="relative overflow-hidden"
+                      style={{
+                        aspectRatio: '1 / 1',
+                        background: b.palette.a,
+                        transition: 'transform .4s var(--ease)',
+                      }}
+                    >
+                      {ic ? (
+                        <svg
+                          viewBox={ic.viewBox}
+                          aria-hidden="true"
+                          style={{
+                            position: 'absolute',
+                            width: '42%',
+                            height: '42%',
+                            left: '29%',
+                            top: '29%',
+                            fill: b.palette.accent,
+                          }}
+                        >
+                          <path d={ic.path} />
+                        </svg>
+                      ) : (
+                        <div
+                          className="absolute inset-0 grid place-items-center font-display"
+                          style={{
+                            fontSize: 'clamp(48px, 5vw, 96px)',
+                            color: b.palette.accent,
+                            fontWeight: 700,
+                            letterSpacing: '-.04em',
+                          }}
+                        >
+                          {b.initial}
+                        </div>
+                      )}
+                    </div>
+                    <div
+                      className="mt-3 font-display"
+                      style={{ fontSize: 18, color: 'var(--bg)' }}
+                    >
+                      {b.name[lang] || b.name.en}
+                    </div>
+                    <div
+                      className="font-mono uppercase"
+                      style={{
+                        fontSize: 11,
+                        letterSpacing: '.08em',
+                        opacity: 0.55,
+                        marginTop: 2,
+                      }}
+                    >
+                      {cat?.[lang] || b.cat}
+                    </div>
+                  </a>
+                </Reveal>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
       {/* CATEGORIES — mono pill row */}
       <section className="container-x" style={{ paddingBlock: 'clamp(40px, 6vw, 80px)' }}>
         <div className="border-t border-line" style={{ paddingTop: 24, marginBottom: 32 }}>
           <div className="font-mono uppercase text-ink-mute text-[11px]" style={{ letterSpacing: '.08em' }}>
-            {t('cats_eye')} — 02
+            {t('cats_eye')} — 03
           </div>
           <h2
             className="font-display"
@@ -541,7 +664,7 @@ export function Home() {
       <section className="container-x section-padding" id="how">
         <div className="border-t border-line" style={{ paddingTop: 24, marginBottom: 32 }}>
           <div className="font-mono uppercase text-ink-mute text-[11px]" style={{ letterSpacing: '.08em' }}>
-            {t('how_eye')} — 03
+            {t('how_eye')} — 04
           </div>
           <h2
             className="font-display"
@@ -585,7 +708,7 @@ export function Home() {
       <section className="container-x section-padding">
         <div className="border-t border-line" style={{ paddingTop: 24, marginBottom: 32 }}>
           <div className="font-mono uppercase text-ink-mute text-[11px]" style={{ letterSpacing: '.08em' }}>
-            {t('testi_eye')} — 04
+            {t('testi_eye')} — 05
           </div>
           <h2
             className="font-display"
@@ -637,7 +760,7 @@ export function Home() {
                 className="font-mono uppercase text-[11px]"
                 style={{ letterSpacing: '.08em', opacity: 0.6 }}
               >
-                {t('featured_eye')} — 05
+                {t('featured_eye')} — 06
               </div>
               <h2
                 className="display"
