@@ -31,26 +31,28 @@ function stageOf(p: number) {
 
 function Bust({ scrollProgress, theme }: BustProps) {
   const ref = useRef<THREE.Group>(null);
+  const spinRef = useRef(0);
   const { scene } = useGLTF('/models/bust.glb') as unknown as {
     scene: THREE.Group;
   };
 
   // Compute & cache the source bounding box so we can centre + scale the bust
-  // explicitly (no Bounds auto-fit — the auto-frame was making the bust read
-  // as a small adrift sliver instead of a viewport-dominating sculpture).
-  const { cloned, centerY, normScale } = useMemo(() => {
+  // explicitly. Shift the pivot DOWN by half the bust height so the head sits
+  // at world Y≈0 (viewport vertical centre) rather than the bbox centre being
+  // at the neck — this is what plants the head INSIDE the lockup band.
+  const { cloned, normScale, bustHeight } = useMemo(() => {
     const c = scene.clone(true);
     const box = new THREE.Box3().setFromObject(c);
     const size = new THREE.Vector3();
     box.getSize(size);
     const center = new THREE.Vector3();
     box.getCenter(center);
-    // Translate the mesh so its bounding-box centre sits at origin
+    // Recentre so origin is at the bbox centre (neck/upper-chest).
     c.position.sub(center);
-    // Pick a uniform scale so the tallest dim spans ~3 units (viewport-y dominant)
+    // Uniform scale: target bust height ~ 3.6 units (slightly larger than before).
     const tallest = Math.max(size.x, size.y, size.z);
-    const n = tallest > 0 ? 3.2 / tallest : 1;
-    return { cloned: c, centerY: center.y, normScale: n };
+    const n = tallest > 0 ? 3.6 / tallest : 1;
+    return { cloned: c, normScale: n, bustHeight: size.y * n };
   }, [scene]);
 
   // Re-shade to warm cream marble (no clearcoat — was reading plastic-y).
@@ -70,62 +72,50 @@ function Bust({ scrollProgress, theme }: BustProps) {
         mesh.receiveShadow = true;
       }
     });
-  }, [cloned, theme, centerY]);
+  }, [cloned, theme]);
 
-  // 4-section scroll choreography — matches Monolith's staged scrolljack feel.
-  // Stage 0  : front-on, slow Y-spin, camera mid-distance.
-  // Stage 1  : 3/4 turn right, camera dollies in on the face.
-  // Stage 2  : side profile (90°), camera pulls back, bust drifts up.
-  // Stage 3  : back-of-head into oblique, bust slides off-screen as we exit.
+  // 4-section scroll choreography — Monolith-style.
+  // Camera stays roughly stationary; the bust turns + drifts. The continuous
+  // background spin is accumulated in `spinRef` so it never gets clobbered
+  // by per-frame target-rotation writes.
   useFrame(({ camera }, dt) => {
     if (!ref.current) return;
     const p = scrollProgress();
     const { stage, blend } = stageOf(p);
 
-    // Continuous slow base rotation (felt motion when sitting at one section)
-    ref.current.rotation.y += dt * 0.06;
+    // Continuous slow base spin — accumulates regardless of stage maths.
+    spinRef.current += dt * 0.08;
 
-    // Per-stage additive Y rotation offset
-    const STAGE_ROT = [0, Math.PI * 0.5, Math.PI, Math.PI * 1.5];
-    const baseRot = STAGE_ROT[stage] ?? 0;
-    const nextRot = STAGE_ROT[Math.min(3, stage + 1)] ?? STAGE_ROT[3];
+    // Per-stage rotation OFFSETS (small, deliberate turns — never a full
+    // revolution between stages, so the head never disappears entirely).
+    const STAGE_ROT = [0, 0.6, 1.3, 2.1]; // radians ≈ 0°, 34°, 75°, 120°
+    const baseRot = STAGE_ROT[stage];
+    const nextRot = STAGE_ROT[Math.min(3, stage + 1)];
     const targetRot = THREE.MathUtils.lerp(baseRot, nextRot, blend);
-    // Apply target rotation as a Y offset added to the continuous spin
-    ref.current.rotation.y =
-      (ref.current.rotation.y % (Math.PI * 2)) * 0.4 + targetRot;
+    ref.current.rotation.y = spinRef.current + targetRot;
 
-    // Per-stage camera + bust vertical positioning
-    const CAM_Z = [6.0, 3.6, 5.4, 7.5];
-    const CAM_Y = [0.4, 1.05, 0.6, 0.2];
-    const TARGET_Y = [0.0, 0.55, 0.2, -0.4];
-    const BUST_Y = [0.0, 0.0, 0.25, -1.8];
+    // Position the bust so its HEAD sits in the upper third of the viewport
+    // (right inside the TCARD lockup band). The mesh's pivot is at its bbox
+    // centre, so we shift world Y DOWN by half its height to plant the head
+    // near origin (camera looks at 0,0,0). Small per-stage tweaks for life.
+    const headLift = -bustHeight / 2 + 0.35; // bring head up into lockup
+    const STAGE_BUSTY = [headLift, headLift + 0.1, headLift - 0.05, headLift + 0.3];
+    const bustY = THREE.MathUtils.lerp(
+      STAGE_BUSTY[stage],
+      STAGE_BUSTY[Math.min(3, stage + 1)],
+      blend,
+    );
+    ref.current.position.y = bustY;
 
+    // Camera: tight band — stationary X, gentle Z dolly only on stage 1.
+    const CAM_Z = [5.4, 4.4, 5.0, 5.8];
     const camZ = THREE.MathUtils.lerp(
       CAM_Z[stage],
       CAM_Z[Math.min(3, stage + 1)],
       blend,
     );
-    const camY = THREE.MathUtils.lerp(
-      CAM_Y[stage],
-      CAM_Y[Math.min(3, stage + 1)],
-      blend,
-    );
-    const targetY = THREE.MathUtils.lerp(
-      TARGET_Y[stage],
-      TARGET_Y[Math.min(3, stage + 1)],
-      blend,
-    );
-    const bustY = THREE.MathUtils.lerp(
-      BUST_Y[stage],
-      BUST_Y[Math.min(3, stage + 1)],
-      blend,
-    );
-
-    camera.position.x = 0;
-    camera.position.y = camY;
-    camera.position.z = camZ;
-    camera.lookAt(0, targetY, 0);
-    ref.current.position.y = bustY;
+    camera.position.set(0, 0.4, camZ);
+    camera.lookAt(0, 0.1, 0);
   });
 
   return (
@@ -135,15 +125,6 @@ function Bust({ scrollProgress, theme }: BustProps) {
       scale={[normScale, normScale, normScale]}
       position={[0, 0, 0]}
     />
-  );
-}
-
-function FallbackPrimitive() {
-  return (
-    <mesh position={[0, 0, 0]}>
-      <capsuleGeometry args={[0.7, 1.4, 8, 16]} />
-      <meshStandardMaterial color="#e8e3d6" roughness={0.7} />
-    </mesh>
   );
 }
 
@@ -180,7 +161,7 @@ export default function Statue3D({
       <directionalLight position={[-6, 1, -3]} intensity={0.9} color="#7d96b8" />
       {/* Warm fill */}
       <pointLight position={[2, -1, 4]} intensity={0.3} color="#fff4dc" />
-      <Suspense fallback={<FallbackPrimitive />}>
+      <Suspense fallback={null}>
         <Bust
           scrollProgress={prefersReduced ? () => 0 : scrollProgress}
           theme={theme}

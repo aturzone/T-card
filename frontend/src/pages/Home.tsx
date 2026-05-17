@@ -106,23 +106,15 @@ export function Home() {
           className="sticky overflow-hidden"
           style={{ top: 0, height: '100vh' }}
         >
-          {/* L0 — Full-bleed Statue3D background */}
+          {/* L0 — Full-bleed Statue3D background. Empty fallback so the page
+              shows only the page bg + lockup + captions while the GLB streams;
+              no transient placeholder shape. */}
           <div className="absolute inset-0" style={{ zIndex: 0 }}>
             {show3D ? (
-              <Suspense
-                fallback={
-                  <div className="w-full h-full flex items-center justify-center text-ink-mute">
-                    <Statue3DStatic className="w-1/2 max-w-md" />
-                  </div>
-                }
-              >
+              <Suspense fallback={null}>
                 <Statue3D scrollProgress={scrollProgress} theme={theme} />
               </Suspense>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-ink-mute">
-                <Statue3DStatic className="w-3/4 max-w-md" />
-              </div>
-            )}
+            ) : null}
           </div>
 
           {/* L1 — Per-stage giant lockup with mix-blend-difference; each lockup
@@ -136,9 +128,9 @@ export function Home() {
                 key={i}
                 className="hero-lockup font-display absolute pointer-events-none"
                 style={{
-                  top: '6vh',
+                  top: '50%',
                   left: '50%',
-                  transform: 'translateX(-50%)',
+                  transform: 'translate(-50%, -50%)',
                   fontSize: 'var(--fs-mega)',
                   fontWeight: 700,
                   letterSpacing: '-0.05em',
