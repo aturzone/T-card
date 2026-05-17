@@ -27,23 +27,73 @@ function useTehranClock(lang: 'en' | 'fa') {
 
 const Statue3D = lazy(() => import('@/components/three/Statue3D'));
 
-type Corner = 'tl' | 'tr' | 'bl' | 'br' | 'cl' | 'cr';
-type StageSpec = {
-  lockup: string;
-  caption: { top: string; sub: string };
-  textCorner: Corner;
+// ===================================================================
+// Hero choreography model
+// ===================================================================
+//
+// monolithstudio.com pattern (derived from frame-by-frame captures):
+//   - ONE sticky bust + canvas
+//   - 1–2 GIANT lockups that appear briefly (start + end of scroll-jack)
+//   - Several CAPTION BLOCKS that slide IN/OUT as scroll passes
+//
+// Each block has 4 scroll markers:
+//   [a, b, c, d] = enter_start, enter_end, exit_start, exit_end
+// Between [a..b] the block fades + slides into position.
+// Between [b..c] it sits stable.
+// Between [c..d] it fades + slides out (upward).
+// Outside the range it's invisible.
+
+type BlockMotion = { op: number; y: number; wipe: number };
+
+function blockMotion(p: number, [a, b, c, d]: [number, number, number, number]): BlockMotion {
+  if (p < a) return { op: 0, y: 60, wipe: 100 };
+  if (p < b) {
+    const t = (p - a) / Math.max(1e-6, b - a);
+    const e = t * t * (3 - 2 * t); // smoothstep
+    return { op: e, y: 60 * (1 - e), wipe: (1 - e) * 100 };
+  }
+  if (p < c) return { op: 1, y: 0, wipe: 0 };
+  if (p < d) {
+    const t = (p - c) / Math.max(1e-6, d - c);
+    const e = t * t * (3 - 2 * t);
+    return { op: 1 - e, y: -60 * e, wipe: 0 };
+  }
+  return { op: 0, y: -60, wipe: 0 };
+}
+
+type BlockPos = 'tl' | 'tr' | 'bl' | 'br' | 'ml' | 'mr';
+type CaptionBlock = {
+  id: string;
+  pos: BlockPos;
+  kind: 'mono' | 'card' | 'paragraph';
+  eyebrow: { en: string; fa: string };
+  body: { en: string; fa: string };
+  range: [number, number, number, number];
+  wipe: 'ltr' | 'rtl';
 };
 
-const cornerStyle = (c: Corner): React.CSSProperties => {
-  switch (c) {
-    case 'tl': return { top: 88, left: 24, textAlign: 'start' };
-    case 'tr': return { top: 88, right: 24, textAlign: 'end' };
-    case 'bl': return { bottom: 56, left: 24, textAlign: 'start' };
-    case 'br': return { bottom: 56, right: 24, textAlign: 'end' };
-    case 'cl': return { top: '50%', left: 24, transform: 'translateY(-50%)', textAlign: 'start' };
-    case 'cr': return { top: '50%', right: 24, transform: 'translateY(-50%)', textAlign: 'end' };
-  }
+type Lockup = {
+  id: string;
+  text: { en: string; fa: string };
+  variant: 'sash' | 'stack-left';
+  range: [number, number, number, number];
 };
+
+function blockBasePos(pos: BlockPos): React.CSSProperties {
+  switch (pos) {
+    case 'tl': return { top: 16, left: 24 };
+    case 'tr': return { top: 16, right: 24, textAlign: 'end' };
+    case 'bl': return { bottom: 56, left: 24 };
+    case 'br': return { bottom: 56, right: 24, textAlign: 'end' };
+    case 'ml': return { top: '38%', left: 24 };
+    case 'mr': return { top: '38%', right: 24, textAlign: 'end' };
+  }
+}
+
+function wipeClip(wipe: 'ltr' | 'rtl', amount: number): string {
+  if (wipe === 'ltr') return `inset(0 ${amount}% 0 0)`;
+  return `inset(0 0 0 ${amount}%)`;
+}
 
 export function Home() {
   const { lang, t } = useApp();
@@ -51,9 +101,6 @@ export function Home() {
   const featured = BRANDS.slice(0, 4);
 
   const heroRef = useRef<HTMLElement>(null);
-  // Header is 72 px (see .header-inner in index.css). Pass it so the hook
-  // doesn't ignore the first 72 px of scroll while the section is settling
-  // into its sticky position.
   const scrollProgress = useScrollProgress(heroRef, 72);
   const time = useTehranClock(lang);
 
@@ -74,9 +121,6 @@ export function Home() {
     };
   }, []);
 
-  // For driving lockup opacity off scroll. We sample on rAF and trigger a
-  // cheap re-render at ~60fps; React's reconciler dedupes when nothing
-  // visible changes.
   const [pTick, setPTick] = useState(0);
   useEffect(() => {
     let raf = 0;
@@ -88,41 +132,93 @@ export function Home() {
     return () => cancelAnimationFrame(raf);
   }, [scrollProgress]);
 
-  // Corner-snapping lockups — each stage lives in a different corner than its
-  // neighbours, mirroring monolithstudio.com's frame-by-frame layout shifts.
-  const STAGES: StageSpec[] = [
+  const p = reduced ? 0 : pTick;
+
+  // Caption blocks scroll past the sticky bust. Ranges are tuned against the
+  // 14-frame monolithstudio.com capture in /ref-mono.
+  const BLOCKS: CaptionBlock[] = [
     {
-      lockup: t('hero_lockup_home'),
-      caption: { top: 'T-CARD STUDIO', sub: 'CONTEMPORARY GIFT CARDS — BASED IN TEHRAN' },
-      textCorner: 'bl',
+      id: 'tagline',
+      pos: 'bl',
+      kind: 'mono',
+      eyebrow: { en: 'T-CARD STUDIO', fa: 'استودیو تی‌کارت' },
+      body: {
+        en: 'CONTEMPORARY GIFT CARDS — BASED IN TEHRAN',
+        fa: 'کارت‌های هدیه معاصر — تهران',
+      },
+      range: [0, 0, 0.10, 0.16],
+      wipe: 'ltr',
     },
     {
-      lockup: lang === 'fa' ? 'هنر' : 'CRAFT',
-      caption: { top: 'SIDENOTE', sub: 'Every card design hand-drawn by the studio. No stock art, no AI.' },
-      textCorner: 'tl',
+      id: 'about',
+      pos: 'ml',
+      kind: 'paragraph',
+      eyebrow: { en: 'ABOUT', fa: 'درباره ما' },
+      body: {
+        en: 'T-Card brings 80+ global brands’ gift cards to Iran with hand-drawn covers and 90-second delivery.',
+        fa: 'تی‌کارت بیش از ۸۰ برند جهانی را با کارت‌های دست‌ساز و تحویل ۹۰ ثانیه‌ای به ایران می‌آورد.',
+      },
+      range: [0.08, 0.16, 0.26, 0.32],
+      wipe: 'ltr',
     },
     {
-      lockup: lang === 'fa' ? 'برندها' : 'BRANDS',
-      caption: { top: 'COLLECTION', sub: '80+ partners — Amazon, Steam, PlayStation, Netflix, and more.' },
-      textCorner: 'cr',
+      id: 'sidenote-craft',
+      pos: 'mr',
+      kind: 'card',
+      eyebrow: { en: 'SIDENOTE', fa: 'یادداشت' },
+      body: {
+        en: 'Every card cover is hand-drawn by the studio. No stock art, no AI.',
+        fa: 'طرح روی هر کارت دست‌ساز استودیو است. بدون عکس آماده، بدون هوش مصنوعی.',
+      },
+      range: [0.24, 0.32, 0.42, 0.48],
+      wipe: 'rtl',
     },
     {
-      lockup: t('cta_buy_gift').replace(/[→↗←↑↓]/g, '').trim() || 'BUY',
-      caption: { top: 'NEXT', sub: 'Scroll to the gallery, or jump straight to the shop.' },
-      textCorner: 'br',
+      id: 'vision',
+      pos: 'mr',
+      kind: 'paragraph',
+      eyebrow: { en: 'OUR VISION', fa: 'چشم‌انداز' },
+      body: {
+        en: 'Make the friction of buying a foreign gift card disappear — from search to send in under two minutes.',
+        fa: 'حذف اصطکاک خرید کارت‌های هدیه خارجی — از جستجو تا ارسال در کمتر از دو دقیقه.',
+      },
+      range: [0.44, 0.52, 0.62, 0.68],
+      wipe: 'rtl',
+    },
+    {
+      id: 'sidenote-brands',
+      pos: 'ml',
+      kind: 'card',
+      eyebrow: { en: 'SIDENOTE', fa: 'یادداشت' },
+      body: {
+        en: 'Brands you know — Amazon, Steam, PlayStation, Netflix, and 80+ more.',
+        fa: 'برندهای آشنا — آمازون، استیم، پلی‌استیشن، نتفلیکس و بیش از ۸۰ برند دیگر.',
+      },
+      range: [0.62, 0.70, 0.82, 0.88],
+      wipe: 'ltr',
     },
   ];
 
-  const stageCount = STAGES.length;
-  // Effective progress for caption swap — drops to 0 if reduced motion (so
-  // only stage 0 ever renders).
-  const p = reduced ? 0 : pTick;
-  const stageIdx = Math.min(stageCount - 1, Math.max(0, Math.floor(p * stageCount)));
-  const stage = STAGES[stageIdx] ?? STAGES[0];
+  // Two giant lockups bookend the hero scroll-jack (mirrors monolith's
+  // MONOLITH sash at start + MEET THE ARTISTS stack near the end).
+  const LOCKUPS: Lockup[] = [
+    {
+      id: 'tcard',
+      text: { en: 'TCARD', fa: 'تی‌کارت' },
+      variant: 'sash',
+      range: [0, 0, 0.09, 0.16],
+    },
+    {
+      id: 'shop',
+      text: { en: 'SHOP\nNOW', fa: 'خرید\nکارت' },
+      variant: 'stack-left',
+      range: [0.66, 0.78, 0.98, 1.0],
+    },
+  ];
 
-  // Hero scroll-jack region height: ~6 viewports of pinned scroll on desktop,
-  // collapsed to a single viewport on mobile (no scrub, lockups stack).
-  const heroHeight = show3D && !reduced ? '600vh' : '100vh';
+  // Scroll-jack length. Tuned to give each block ~16–18% of scroll, which
+  // matches the cadence of the monolith reference.
+  const heroHeight = show3D && !reduced ? '700vh' : '100vh';
 
   return (
     <main className="page">
@@ -144,58 +240,155 @@ export function Home() {
             ) : null}
           </div>
 
-          {/* L1 — Per-stage giant lockups, scroll-blended */}
-          {STAGES.map((s, i) => {
-            const d = p * stageCount - i;
-            const op =
-              d < -0.2 ? 0 :
-              d < 0 ? (d + 0.2) / 0.2 :
-              d < 0.8 ? 1 :
-              d < 1 ? (1 - d) / 0.2 :
-              0;
-            const opFinal = reduced ? (i === 0 ? 1 : 0) : op;
+          {/* L1 — Giant scroll-bound lockups */}
+          {LOCKUPS.map((lk) => {
+            const m = reduced && lk.id !== 'tcard' ? { op: 0, y: 0, wipe: 0 } :
+                      reduced ? { op: 1, y: 0, wipe: 0 } : blockMotion(p, lk.range);
+            const text = lk.text[lang];
+            if (lk.variant === 'sash') {
+              return (
+                <h1
+                  key={lk.id}
+                  data-id={lk.id}
+                  className="font-display absolute pointer-events-none"
+                  style={{
+                    top: '14%',
+                    left: '50%',
+                    transform: `translate3d(-50%, ${m.y * 0.5}px, 0)`,
+                    fontSize: 'var(--fs-mega)',
+                    fontWeight: 700,
+                    letterSpacing: '-0.05em',
+                    lineHeight: 0.85,
+                    color: '#ffffff',
+                    opacity: m.op,
+                    zIndex: 2,
+                    mixBlendMode: 'difference',
+                    whiteSpace: 'nowrap',
+                    margin: 0,
+                    clipPath: wipeClip('ltr', m.wipe * 0.5),
+                  }}
+                >
+                  {text}
+                </h1>
+              );
+            }
+            // stack-left
             return (
-              <h1
-                key={i}
-                data-stage={i}
-                data-op={opFinal.toFixed(3)}
-                data-p={p.toFixed(3)}
-                className="hero-lockup font-display absolute pointer-events-none"
+              <h2
+                key={lk.id}
+                data-id={lk.id}
+                className="font-display absolute pointer-events-none"
                 style={{
-                  top: '22%',
-                  left: '50%',
-                  transform: 'translate(-50%, 0)',
-                  fontSize: 'var(--fs-mega)',
+                  top: '18%',
+                  left: 32,
+                  transform: `translate3d(0, ${m.y * 0.5}px, 0)`,
+                  fontSize: 'clamp(80px, 13vw, 200px)',
                   fontWeight: 700,
                   letterSpacing: '-0.05em',
                   lineHeight: 0.85,
                   color: '#ffffff',
-                  opacity: opFinal,
-                  zIndex: 1,
+                  opacity: m.op,
+                  zIndex: 2,
                   mixBlendMode: 'difference',
-                  whiteSpace: 'nowrap',
+                  whiteSpace: 'pre',
                   margin: 0,
-                  transition: 'opacity .25s linear',
+                  clipPath: wipeClip('ltr', m.wipe),
                 }}
               >
-                {s.lockup}
-              </h1>
+                {text}
+              </h2>
             );
           })}
 
-          {/* L2 — Mono corner captions (museum specimen card) */}
-          <div
-            className="container-x relative h-full"
-            style={{ zIndex: 3 }}
-          >
-            <div
-              className="absolute mono-corner"
-              style={{ ...cornerStyle(stage.textCorner), maxWidth: '34ch', transition: 'top .35s var(--ease), bottom .35s var(--ease), left .35s var(--ease), right .35s var(--ease)' }}
-            >
-              {stage.caption.top}<br />
-              <span style={{ opacity: 0.75 }}>{stage.caption.sub}</span>
-            </div>
+          {/* L2 — Caption blocks with scroll-bound slide + wipe entrance */}
+          <div className="container-x relative h-full" style={{ zIndex: 3 }}>
+            {BLOCKS.map((b) => {
+              const m = reduced && b.id !== 'tagline' ? { op: 0, y: 0, wipe: 0 } :
+                        reduced ? { op: 1, y: 0, wipe: 0 } : blockMotion(p, b.range);
+              const eb = b.eyebrow[lang];
+              const body = b.body[lang];
+              const base = blockBasePos(b.pos);
+              const maxW = b.kind === 'paragraph' ? '38ch' : b.kind === 'card' ? '36ch' : '34ch';
 
+              if (b.kind === 'card') {
+                return (
+                  <div
+                    key={b.id}
+                    data-id={b.id}
+                    className="absolute pointer-events-none"
+                    style={{
+                      ...base,
+                      maxWidth: maxW,
+                      transform: `translate3d(0, ${m.y}px, 0)`,
+                      opacity: m.op,
+                      clipPath: wipeClip(b.wipe, m.wipe),
+                      transition: 'none',
+                    }}
+                  >
+                    <div
+                      style={{
+                        background: 'var(--ink)',
+                        color: 'var(--bg)',
+                        padding: '14px 20px 18px',
+                        borderRadius: 0,
+                        minWidth: 280,
+                      }}
+                    >
+                      <div className="font-mono uppercase" style={{ fontSize: 12, letterSpacing: '.08em', paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,.18)', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{eb}</span>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--bg)' }} />
+                      </div>
+                      <p style={{ fontSize: 14, lineHeight: 1.45, margin: 0 }}>
+                        {body}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              if (b.kind === 'paragraph') {
+                return (
+                  <div
+                    key={b.id}
+                    data-id={b.id}
+                    className="absolute pointer-events-none"
+                    style={{
+                      ...base,
+                      maxWidth: maxW,
+                      transform: `translate3d(0, ${m.y}px, 0)`,
+                      opacity: m.op,
+                      clipPath: wipeClip(b.wipe, m.wipe),
+                    }}
+                  >
+                    <div className="font-mono uppercase text-ink-mute" style={{ fontSize: 11, letterSpacing: '.08em', marginBottom: 14 }}>
+                      {eb}
+                    </div>
+                    <p className="font-display" style={{ fontSize: 'clamp(20px, 1.8vw, 28px)', lineHeight: 1.25, color: 'var(--ink)', margin: 0, letterSpacing: '-.01em' }}>
+                      {body}
+                    </p>
+                  </div>
+                );
+              }
+              // mono
+              return (
+                <div
+                  key={b.id}
+                  data-id={b.id}
+                  className="absolute mono-corner pointer-events-none"
+                  style={{
+                    ...base,
+                    maxWidth: maxW,
+                    transform: `translate3d(0, ${m.y}px, 0)`,
+                    opacity: m.op,
+                    clipPath: wipeClip(b.wipe, m.wipe),
+                  }}
+                >
+                  {eb}<br />
+                  <span style={{ opacity: 0.75 }}>{body}</span>
+                </div>
+              );
+            })}
+
+            {/* Persistent UI — clock, scroll hint, CTA, progress dots */}
             <div className="absolute mono-corner" style={{ top: 24, left: 24 }}>
               {time} &mdash; {t('eyebrow_tehran')}
             </div>
@@ -203,7 +396,7 @@ export function Home() {
               className="absolute mono-corner text-right"
               style={{ top: 24, right: 24 }}
             >
-              {p < 0.95 ? 'KEEP SCROLLING ↓' : 'GALLERY BELOW ↓'}
+              {p < 0.95 ? (lang === 'fa' ? 'به اسکرول ادامه دهید ↓' : 'KEEP SCROLLING ↓') : (lang === 'fa' ? 'گالری در ادامه ↓' : 'GALLERY BELOW ↓')}
             </div>
             <button
               className="absolute mono-corner hover:opacity-70"
@@ -220,29 +413,28 @@ export function Home() {
               {t('cta_buy_gift')}
             </button>
 
+            {/* Scroll progress bar — single line growing left-to-right.
+                More minimal than the dots, matches the ref's mono aesthetic. */}
             <div
               className="absolute"
               style={{
-                bottom: 24,
+                bottom: 28,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                display: 'flex',
-                gap: 6,
+                width: 160,
+                height: 1,
+                background: 'rgba(1,1,1,.18)',
                 zIndex: 4,
               }}
             >
-              {STAGES.map((_, i) => (
-                <div
-                  key={i}
-                  style={{
-                    width: i === stageIdx ? 28 : 12,
-                    height: 2,
-                    background: 'var(--ink)',
-                    opacity: i === stageIdx ? 0.9 : 0.25,
-                    transition: 'all .35s var(--ease)',
-                  }}
-                />
-              ))}
+              <div
+                style={{
+                  height: '100%',
+                  width: `${Math.min(100, Math.max(0, p * 100))}%`,
+                  background: 'var(--ink)',
+                  transition: 'none',
+                }}
+              />
             </div>
           </div>
         </div>
