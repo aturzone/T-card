@@ -299,7 +299,9 @@ export function Home() {
                     mixBlendMode: 'difference',
                     whiteSpace: 'nowrap',
                     margin: 0,
-                    maxWidth: 'calc(100vw - 48px)',
+                    // No maxWidth — let the wordmark size to its natural
+                    // content width. Persian glyphs render wider than Latin
+                    // and were being clipped at calc(100vw - 48px).
                     clipPath: wipeClip('ltr', m.wipe * 0.5),
                   }}
                 >
@@ -331,7 +333,8 @@ export function Home() {
                   mixBlendMode: 'difference',
                   whiteSpace: 'pre',
                   margin: 0,
-                  maxWidth: 'calc(50vw - 48px)',
+                  // No maxWidth — Persian "خرید کارت" was clipping at
+                  // calc(50vw - 48px). Natural width via whiteSpace: pre.
                   clipPath: wipeClip('ltr', m.wipe),
                 }}
               >
