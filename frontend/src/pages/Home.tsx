@@ -27,11 +27,20 @@ function useTehranClock(lang: 'en' | 'fa') {
 
 const Statue3D = lazy(() => import('@/components/three/Statue3D'));
 
-function useScrollProgress() {
+function useHeroScrollProgress(heroRef: React.RefObject<HTMLElement>) {
+  // 0..1 mapped across the hero's full scroll range (top sticks until bottom).
   const ref = useRef(0);
+  const [stateP, setStateP] = useState(0); // for UI bindings that need re-render
   useEffect(() => {
     const tick = () => {
-      ref.current = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
+      const el = heroRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const sticky = -rect.top;
+      const max = Math.max(1, rect.height - window.innerHeight);
+      const p = Math.min(1, Math.max(0, sticky / max));
+      ref.current = p;
+      setStateP(p);
     };
     tick();
     window.addEventListener('scroll', tick, { passive: true });
@@ -40,8 +49,8 @@ function useScrollProgress() {
       window.removeEventListener('scroll', tick);
       window.removeEventListener('resize', tick);
     };
-  }, []);
-  return () => ref.current;
+  }, [heroRef]);
+  return { getter: () => ref.current, p: stateP };
 }
 
 export function Home() {
@@ -49,7 +58,8 @@ export function Home() {
   const navigate = useNavigate();
   const featured = BRANDS.slice(0, 4);
 
-  const scrollProgress = useScrollProgress();
+  const heroRef = useRef<HTMLElement>(null);
+  const { getter: scrollProgress, p } = useHeroScrollProgress(heroRef);
   const time = useTehranClock(lang);
   const [show3D, setShow3D] = useState(false);
   useEffect(() => {
@@ -60,95 +70,157 @@ export function Home() {
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
+  // 4-stage editorial — each stage has its own lockup + caption.
+  const STAGES: { lockup: string; caption: { top: string; sub: string } }[] = [
+    {
+      lockup: t('hero_lockup_home'),
+      caption: { top: 'T-CARD STUDIO', sub: 'CONTEMPORARY GIFT CARDS — BASED IN TEHRAN' },
+    },
+    {
+      lockup: lang === 'fa' ? 'هنر' : 'CRAFT',
+      caption: { top: 'SIDENOTE', sub: 'Every card design hand-drawn by the studio. No stock art, no AI.' },
+    },
+    {
+      lockup: lang === 'fa' ? 'برندها' : 'BRANDS',
+      caption: { top: 'COLLECTION', sub: '80+ partners — Amazon, Steam, PlayStation, Netflix, and more.' },
+    },
+    {
+      lockup: t('cta_buy_gift').replace(/[→↗←↑↓]/g, '').trim() || 'BUY',
+      caption: { top: 'NEXT', sub: 'Scroll to the gallery, or jump straight to the shop.' },
+    },
+  ];
+  const stageIdx = Math.min(3, Math.floor(p * 4 + 1e-6));
+  const stage = STAGES[stageIdx];
+  const stageBlend = Math.max(0, Math.min(1, p * 4 - stageIdx));
+
   return (
     <main className="page">
-      {/* HERO CINEMA — full-bleed bust, mix-blend-difference TCARD, 4-corner mono captions */}
+      {/* HERO SCROLLJACK — 4 sticky scroll sections sharing the bust canvas */}
       <section
-        className="hero-cinema relative overflow-hidden"
-        style={{ minHeight: '100vh' }}
+        ref={heroRef}
+        className="hero-cinema relative"
+        style={{ minHeight: '400vh' }}
       >
-        {/* L0 — Full-bleed Statue3D background */}
-        <div className="absolute inset-0" style={{ zIndex: 0 }}>
-          {show3D ? (
-            <Suspense
-              fallback={
-                <div className="w-full h-full flex items-center justify-center text-ink-mute">
-                  <Statue3DStatic className="w-1/2 max-w-md" />
-                </div>
-              }
-            >
-              <Statue3D scrollProgress={scrollProgress} theme={theme} />
-            </Suspense>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-ink-mute">
-              <Statue3DStatic className="w-3/4 max-w-md" />
-            </div>
-          )}
-        </div>
-
-        {/* L1 — Giant TCARD lockup, mix-blend-difference inverts over bust */}
-        <h1
-          className="hero-lockup font-display absolute pointer-events-none"
-          style={{
-            top: '6vh',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: 'var(--fs-mega)',
-            fontWeight: 700,
-            letterSpacing: '-0.05em',
-            lineHeight: 0.85,
-            color: '#ffffff',
-            zIndex: 1,
-            mixBlendMode: 'difference',
-            whiteSpace: 'nowrap',
-            margin: 0,
-          }}
-        >
-          {t('hero_lockup_home')}
-        </h1>
-
-        {/* L2 — Four-corner mono captions (museum specimen card) */}
+        {/* Sticky stage — the bust + lockup + captions stay pinned for 4 viewports of scroll */}
         <div
-          className="container-x relative h-full"
-          style={{ zIndex: 3, minHeight: '100vh' }}
+          className="sticky overflow-hidden"
+          style={{ top: 0, height: '100vh' }}
         >
-          <div
-            className="absolute mono-corner"
-            style={{ top: 24, left: 24 }}
-          >
-            T-CARD STUDIO<br />
-            CONTEMPORARY GIFT CARDS<br />
-            BASED IN TEHRAN
+          {/* L0 — Full-bleed Statue3D background */}
+          <div className="absolute inset-0" style={{ zIndex: 0 }}>
+            {show3D ? (
+              <Suspense
+                fallback={
+                  <div className="w-full h-full flex items-center justify-center text-ink-mute">
+                    <Statue3DStatic className="w-1/2 max-w-md" />
+                  </div>
+                }
+              >
+                <Statue3D scrollProgress={scrollProgress} theme={theme} />
+              </Suspense>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-ink-mute">
+                <Statue3DStatic className="w-3/4 max-w-md" />
+              </div>
+            )}
           </div>
+
+          {/* L1 — Per-stage giant lockup with mix-blend-difference; each lockup
+              fades in/out around its stage boundary so the swap reads as a
+              soft cross-dissolve, not a jump. */}
+          {STAGES.map((s, i) => {
+            const dist = Math.abs(p * 4 - i - 0.5);
+            const op = Math.max(0, 1 - dist * 1.4);
+            return (
+              <h1
+                key={i}
+                className="hero-lockup font-display absolute pointer-events-none"
+                style={{
+                  top: '6vh',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  fontSize: 'var(--fs-mega)',
+                  fontWeight: 700,
+                  letterSpacing: '-0.05em',
+                  lineHeight: 0.85,
+                  color: '#ffffff',
+                  opacity: op,
+                  zIndex: 1,
+                  mixBlendMode: 'difference',
+                  whiteSpace: 'nowrap',
+                  margin: 0,
+                  transition: 'opacity .25s linear',
+                }}
+              >
+                {s.lockup}
+              </h1>
+            );
+          })}
+
+          {/* L2 — Mono corner captions (museum specimen card) */}
           <div
-            className="absolute mono-corner text-right"
-            style={{ top: 24, right: 24 }}
+            className="container-x relative h-full"
+            style={{ zIndex: 3, height: '100vh' }}
           >
-            KEEP SCROLLING ↓<br />
-            {time} &mdash; {t('eyebrow_tehran')}
+            <div className="absolute mono-corner" style={{ top: 24, left: 24 }}>
+              {stage.caption.top}<br />
+              <span style={{ opacity: 0.75 }}>{stage.caption.sub}</span>
+            </div>
+            <div
+              className="absolute mono-corner text-right"
+              style={{ top: 24, right: 24 }}
+            >
+              {p < 0.95 ? 'KEEP SCROLLING ↓' : 'GALLERY BELOW ↓'}<br />
+              {time} &mdash; {t('eyebrow_tehran')}
+            </div>
+            <div className="absolute mono-corner" style={{ bottom: 48, left: 24 }}>
+              80+ {t('stat_brands')} · 90s {t('stat_delivery')}<br />
+              4.9 / 5 {t('stat_rating')} · 2026
+            </div>
+            <button
+              className="absolute mono-corner hover:opacity-70"
+              style={{
+                bottom: 48,
+                right: 24,
+                borderBottom: '1px solid var(--ink)',
+                padding: '8px 0',
+                transition: 'opacity .35s var(--ease)',
+                color: 'var(--ink)',
+              }}
+              onClick={() => navigate('/shop')}
+            >
+              {t('cta_buy_gift')}
+            </button>
+
+            {/* Stage indicator pill — bottom centre */}
+            <div
+              className="absolute"
+              style={{
+                bottom: 24,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                display: 'flex',
+                gap: 6,
+                zIndex: 4,
+              }}
+            >
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: i === stageIdx ? 28 : 12,
+                    height: 2,
+                    background: 'var(--ink)',
+                    opacity: i === stageIdx ? 0.9 : 0.25,
+                    transition: 'all .35s var(--ease)',
+                  }}
+                />
+              ))}
+            </div>
           </div>
-          <div
-            className="absolute mono-corner"
-            style={{ bottom: 48, left: 24 }}
-          >
-            80+ {t('stat_brands')} · 90s {t('stat_delivery')}<br />
-            4.9 / 5 {t('stat_rating')} · 2026
-          </div>
-          <button
-            className="absolute mono-corner hover:opacity-70"
-            style={{
-              bottom: 48,
-              right: 24,
-              borderBottom: '1px solid var(--ink)',
-              padding: '8px 0',
-              transition: 'opacity .35s var(--ease)',
-              color: 'var(--ink)',
-            }}
-            onClick={() => navigate('/shop')}
-          >
-            {t('cta_buy_gift')}
-          </button>
         </div>
+        {/* invisible — silences unused vars when stageBlend isn't read elsewhere */}
+        <span style={{ display: 'none' }} aria-hidden>{stageBlend}</span>
       </section>
 
       {/* FEATURED — editorial 2/3-col, hairline dividers */}

@@ -1,10 +1,8 @@
 import { Suspense, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useGLTF, Environment, ContactShadows, Bounds } from '@react-three/drei';
+import { useGLTF, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Wire drei's useGLTF to our local Draco decoder. Without this it tries the
-// gstatic CDN which is fine in prod but breaks on offline / air-gapped runs.
 useGLTF.setDecoderPath('/draco/');
 useGLTF.preload('/models/bust.glb', true);
 
@@ -18,12 +16,44 @@ type BustProps = {
   theme: 'light' | 'dark';
 };
 
+// Smooth easing for stage transitions
+const easeInOut = (t: number) =>
+  t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+// Map p∈[0,1] to a 4-stage piecewise progress with smooth crossfades.
+// Returns { stage: 0..3, local: 0..1 within stage, blend: smoothed local }
+function stageOf(p: number) {
+  const raw = Math.min(0.9999, Math.max(0, p)) * 4; // 0..4
+  const stage = Math.floor(raw);
+  const local = raw - stage;
+  return { stage, local, blend: easeInOut(local) };
+}
+
 function Bust({ scrollProgress, theme }: BustProps) {
   const ref = useRef<THREE.Group>(null);
-  const { scene } = useGLTF('/models/bust.glb') as unknown as { scene: THREE.Group };
+  const { scene } = useGLTF('/models/bust.glb') as unknown as {
+    scene: THREE.Group;
+  };
 
-  const cloned = useMemo(() => scene.clone(true), [scene]);
+  // Compute & cache the source bounding box so we can centre + scale the bust
+  // explicitly (no Bounds auto-fit — the auto-frame was making the bust read
+  // as a small adrift sliver instead of a viewport-dominating sculpture).
+  const { cloned, centerY, normScale } = useMemo(() => {
+    const c = scene.clone(true);
+    const box = new THREE.Box3().setFromObject(c);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    // Translate the mesh so its bounding-box centre sits at origin
+    c.position.sub(center);
+    // Pick a uniform scale so the tallest dim spans ~3 units (viewport-y dominant)
+    const tallest = Math.max(size.x, size.y, size.z);
+    const n = tallest > 0 ? 3.2 / tallest : 1;
+    return { cloned: c, centerY: center.y, normScale: n };
+  }, [scene]);
 
+  // Re-shade to warm cream marble (no clearcoat — was reading plastic-y).
   useMemo(() => {
     const marbleColor = theme === 'dark' ? '#d8d4ca' : '#f0ebe2';
     cloned.traverse((obj) => {
@@ -40,28 +70,72 @@ function Bust({ scrollProgress, theme }: BustProps) {
         mesh.receiveShadow = true;
       }
     });
-  }, [cloned, theme]);
+  }, [cloned, theme, centerY]);
 
+  // 4-section scroll choreography — matches Monolith's staged scrolljack feel.
+  // Stage 0  : front-on, slow Y-spin, camera mid-distance.
+  // Stage 1  : 3/4 turn right, camera dollies in on the face.
+  // Stage 2  : side profile (90°), camera pulls back, bust drifts up.
+  // Stage 3  : back-of-head into oblique, bust slides off-screen as we exit.
   useFrame(({ camera }, dt) => {
     if (!ref.current) return;
     const p = scrollProgress();
+    const { stage, blend } = stageOf(p);
 
-    // continuous slow rotation
-    ref.current.rotation.y += dt * 0.08;
+    // Continuous slow base rotation (felt motion when sitting at one section)
+    ref.current.rotation.y += dt * 0.06;
 
-    // mid-scroll camera dolly + lookAt rise (0.3 → 0.7)
-    const t = THREE.MathUtils.smoothstep(p, 0.3, 0.7);
-    const zoom = THREE.MathUtils.lerp(6, 3, t);
-    camera.position.z = zoom;
-    camera.position.y = THREE.MathUtils.lerp(0.5, 1.0, t);
-    camera.lookAt(0, THREE.MathUtils.lerp(0, 0.6, t), 0);
+    // Per-stage additive Y rotation offset
+    const STAGE_ROT = [0, Math.PI * 0.5, Math.PI, Math.PI * 1.5];
+    const baseRot = STAGE_ROT[stage] ?? 0;
+    const nextRot = STAGE_ROT[Math.min(3, stage + 1)] ?? STAGE_ROT[3];
+    const targetRot = THREE.MathUtils.lerp(baseRot, nextRot, blend);
+    // Apply target rotation as a Y offset added to the continuous spin
+    ref.current.rotation.y =
+      (ref.current.rotation.y % (Math.PI * 2)) * 0.4 + targetRot;
 
-    // bust slides out as scroll completes (0.7 → 1.0)
-    const exit = THREE.MathUtils.smoothstep(p, 0.7, 1.0);
-    ref.current.position.y = -exit * 2.5;
+    // Per-stage camera + bust vertical positioning
+    const CAM_Z = [6.0, 3.6, 5.4, 7.5];
+    const CAM_Y = [0.4, 1.05, 0.6, 0.2];
+    const TARGET_Y = [0.0, 0.55, 0.2, -0.4];
+    const BUST_Y = [0.0, 0.0, 0.25, -1.8];
+
+    const camZ = THREE.MathUtils.lerp(
+      CAM_Z[stage],
+      CAM_Z[Math.min(3, stage + 1)],
+      blend,
+    );
+    const camY = THREE.MathUtils.lerp(
+      CAM_Y[stage],
+      CAM_Y[Math.min(3, stage + 1)],
+      blend,
+    );
+    const targetY = THREE.MathUtils.lerp(
+      TARGET_Y[stage],
+      TARGET_Y[Math.min(3, stage + 1)],
+      blend,
+    );
+    const bustY = THREE.MathUtils.lerp(
+      BUST_Y[stage],
+      BUST_Y[Math.min(3, stage + 1)],
+      blend,
+    );
+
+    camera.position.x = 0;
+    camera.position.y = camY;
+    camera.position.z = camZ;
+    camera.lookAt(0, targetY, 0);
+    ref.current.position.y = bustY;
   });
 
-  return <primitive ref={ref} object={cloned} />;
+  return (
+    <primitive
+      ref={ref}
+      object={cloned}
+      scale={[normScale, normScale, normScale]}
+      position={[0, 0, 0]}
+    />
+  );
 }
 
 function FallbackPrimitive() {
@@ -86,13 +160,13 @@ export default function Statue3D({
 
   return (
     <Canvas
-      camera={{ position: [0, 0.5, 6], fov: 30 }}
+      camera={{ position: [0, 0.4, 6], fov: 32 }}
       shadows
       dpr={[1, 2]}
       aria-hidden="true"
     >
       <ambientLight intensity={ambient} />
-      {/* Warm key — top-right, dramatic */}
+      {/* Dramatic warm key — top-right */}
       <directionalLight
         position={[4, 7, 5]}
         intensity={3.2}
@@ -104,18 +178,16 @@ export default function Statue3D({
       />
       {/* Cold rim — back-left */}
       <directionalLight position={[-6, 1, -3]} intensity={0.9} color="#7d96b8" />
-      {/* Subtle warm fill */}
+      {/* Warm fill */}
       <pointLight position={[2, -1, 4]} intensity={0.3} color="#fff4dc" />
       <Suspense fallback={<FallbackPrimitive />}>
-        <Bounds fit clip observe margin={1.05}>
-          <Bust
-            scrollProgress={prefersReduced ? () => 0 : scrollProgress}
-            theme={theme}
-          />
-        </Bounds>
+        <Bust
+          scrollProgress={prefersReduced ? () => 0 : scrollProgress}
+          theme={theme}
+        />
         <ContactShadows
-          position={[0, -1.5, 0]}
-          opacity={0.55}
+          position={[0, -1.7, 0]}
+          opacity={0.45}
           scale={6}
           blur={3}
           far={3.5}
@@ -125,4 +197,3 @@ export default function Statue3D({
     </Canvas>
   );
 }
-
