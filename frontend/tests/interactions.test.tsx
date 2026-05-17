@@ -1,6 +1,6 @@
 /**
- * Exercises the interactive surface a real user would: theme toggle, language
- * toggle, cart add/remove/qty, checkout step navigation. Each assertion guards
+ * Exercises the interactive surface a real user would: language toggle,
+ * cart add/remove/qty, checkout step navigation. Each assertion guards
  * against a different class of regression.
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -23,16 +23,6 @@ function bootAt(path: string) {
 }
 
 describe('header controls', () => {
-  test('theme toggle flips html[data-theme]', async () => {
-    bootAt('/');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    const themeBtn = screen.getByLabelText(/toggle theme/i);
-    await userEvent.click(themeBtn);
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    await userEvent.click(themeBtn);
-    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-  });
-
   test('language toggle switches html[data-lang] + dir', async () => {
     bootAt('/');
     expect(document.documentElement.getAttribute('data-lang')).toBe('en');
@@ -45,18 +35,6 @@ describe('header controls', () => {
     await userEvent.click(screen.getByRole('button', { name: 'EN' }));
     expect(document.documentElement.getAttribute('data-lang')).toBe('en');
     expect(document.documentElement.getAttribute('dir')).toBe('ltr');
-  });
-});
-
-describe('localStorage persistence', () => {
-  test('theme + lang choices persist across remount', async () => {
-    const first = bootAt('/');
-    await userEvent.click(screen.getByLabelText(/toggle theme/i));
-    expect(localStorage.getItem('tcard.theme')).toBe('"dark"');
-    first.unmount();
-
-    bootAt('/');
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
   });
 });
 

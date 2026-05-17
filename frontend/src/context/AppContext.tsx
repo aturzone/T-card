@@ -2,11 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { t as translate, fmtPrice as formatPrice, fmtNumber as formatNumber } from '@/data/format';
 import type { I18NKey } from '@/data/i18n';
-import type { CartItem, Lang, Theme } from '@/data/types';
+import type { CartItem, Lang } from '@/data/types';
 
 interface AppContextValue {
-  theme: Theme;
-  toggleTheme: () => void;
   lang: Lang;
   setLang: (l: Lang) => void;
 
@@ -37,25 +35,16 @@ export function useApp(): AppContextValue {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useLocalStorage<Theme>('tcard.theme', 'light');
   const [lang, setLangState] = useLocalStorage<Lang>('tcard.lang', 'en');
   const [cart, setCart] = useLocalStorage<CartItem[]>('tcard.cart', []);
   const [cartOpen, setCartOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; show: boolean }>({ msg: '', show: false });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  useEffect(() => {
     document.documentElement.setAttribute('data-lang', lang);
     document.documentElement.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
     document.documentElement.setAttribute('lang', lang);
   }, [lang]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  }, [setTheme]);
 
   const setLang = useCallback((l: Lang) => setLangState(l), [setLangState]);
 
@@ -86,7 +75,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AppContextValue>(() => ({
-    theme, toggleTheme,
     lang, setLang,
     cart, addToCart, removeFromCart, updateQty, clearCart,
     cartOpen, openCart, closeCart,
@@ -96,7 +84,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     t: (key) => translate(key, lang),
     fmtPrice: (n) => formatPrice(n, lang),
     fmtNumber: (n) => formatNumber(n, lang),
-  }), [theme, toggleTheme, lang, setLang, cart, addToCart, removeFromCart, updateQty, clearCart, cartOpen, openCart, closeCart, toast.msg, toast.show, showToast]);
+  }), [lang, setLang, cart, addToCart, removeFromCart, updateQty, clearCart, cartOpen, openCart, closeCart, toast.msg, toast.show, showToast]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

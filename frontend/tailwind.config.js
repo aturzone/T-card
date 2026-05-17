@@ -3,7 +3,6 @@ import rtl from 'tailwindcss-rtl';
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
-  darkMode: ['class', '[data-theme="dark"]'],
   corePlugins: { preflight: false },
   theme: {
     screens: {

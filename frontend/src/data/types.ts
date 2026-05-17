@@ -1,5 +1,4 @@
 export type Lang = 'en' | 'fa';
-export type Theme = 'light' | 'dark';
 
 export interface LocalizedString {
   en: string;

@@ -5,7 +5,7 @@ import { Reveal } from '@/components/ui/Reveal';
 import { GCard } from '@/components/product/GCard';
 import { Icon } from '@/components/ui/Icon';
 import { ProductTile } from '@/components/product/ProductTile';
-import { Statue3DStatic } from '@/components/three';
+import { useScrollProgress } from '@/hooks/useScrollProgress';
 import { BRANDS } from '@/data/brands';
 import { CATEGORIES } from '@/data/categories';
 import { TESTIMONIALS } from '@/data/testimonials';
@@ -27,121 +27,147 @@ function useTehranClock(lang: 'en' | 'fa') {
 
 const Statue3D = lazy(() => import('@/components/three/Statue3D'));
 
-function useAutoTimeline(cycleMs: number) {
-  // Returns a 0..1 progress that auto-advances on a timer, looping forever.
-  // The bust + lockup choreography runs off this instead of scroll position —
-  // the entire hero plays its 4-stage sequence inside a single 100vh frame.
-  const ref = useRef(0);
-  const [stateP, setStateP] = useState(0);
+type Corner = 'tl' | 'tr' | 'bl' | 'br' | 'cl' | 'cr';
+type StageSpec = {
+  lockup: string;
+  caption: { top: string; sub: string };
+  textCorner: Corner;
+};
+
+const cornerStyle = (c: Corner): React.CSSProperties => {
+  switch (c) {
+    case 'tl': return { top: 88, left: 24, textAlign: 'start' };
+    case 'tr': return { top: 88, right: 24, textAlign: 'end' };
+    case 'bl': return { bottom: 56, left: 24, textAlign: 'start' };
+    case 'br': return { bottom: 56, right: 24, textAlign: 'end' };
+    case 'cl': return { top: '50%', left: 24, transform: 'translateY(-50%)', textAlign: 'start' };
+    case 'cr': return { top: '50%', right: 24, transform: 'translateY(-50%)', textAlign: 'end' };
+  }
+};
+
+export function Home() {
+  const { lang, t } = useApp();
+  const navigate = useNavigate();
+  const featured = BRANDS.slice(0, 4);
+
+  const heroRef = useRef<HTMLElement>(null);
+  const scrollProgress = useScrollProgress(heroRef);
+  const time = useTehranClock(lang);
+
+  const [show3D, setShow3D] = useState(false);
+  const [reduced, setReduced] = useState(false);
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      ref.current = 0;
-      setStateP(0);
-      return;
-    }
-    const start = performance.now();
+    const mqDesktop = window.matchMedia('(min-width: 768px)');
+    const mqReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setShow3D(mqDesktop.matches);
+    setReduced(mqReduced.matches);
+    const onDesktop = (e: MediaQueryListEvent) => setShow3D(e.matches);
+    const onReduced = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mqDesktop.addEventListener('change', onDesktop);
+    mqReduced.addEventListener('change', onReduced);
+    return () => {
+      mqDesktop.removeEventListener('change', onDesktop);
+      mqReduced.removeEventListener('change', onReduced);
+    };
+  }, []);
+
+  // For driving lockup opacity off scroll. We sample on rAF and trigger a
+  // cheap re-render at ~60fps; React's reconciler dedupes when nothing
+  // visible changes.
+  const [pTick, setPTick] = useState(0);
+  useEffect(() => {
     let raf = 0;
-    const tick = (now: number) => {
-      const elapsed = (now - start) % cycleMs;
-      const p = elapsed / cycleMs;
-      ref.current = p;
-      setStateP(p);
+    const tick = () => {
+      setPTick(scrollProgress());
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [cycleMs]);
-  return { getter: () => ref.current, p: stateP };
-}
+  }, [scrollProgress]);
 
-export function Home() {
-  const { lang, t, theme } = useApp();
-  const navigate = useNavigate();
-  const featured = BRANDS.slice(0, 4);
-
-  // 14s full cycle — feels close to Monolith's relaxed cadence
-  const { getter: scrollProgress, p } = useAutoTimeline(14000);
-  const time = useTehranClock(lang);
-  const [show3D, setShow3D] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
-    setShow3D(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setShow3D(e.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-
-  // 4-stage editorial — each stage has its own lockup + caption.
-  const STAGES: { lockup: string; caption: { top: string; sub: string } }[] = [
+  // Corner-snapping lockups — each stage lives in a different corner than its
+  // neighbours, mirroring monolithstudio.com's frame-by-frame layout shifts.
+  const STAGES: StageSpec[] = [
     {
       lockup: t('hero_lockup_home'),
       caption: { top: 'T-CARD STUDIO', sub: 'CONTEMPORARY GIFT CARDS — BASED IN TEHRAN' },
+      textCorner: 'bl',
     },
     {
       lockup: lang === 'fa' ? 'هنر' : 'CRAFT',
       caption: { top: 'SIDENOTE', sub: 'Every card design hand-drawn by the studio. No stock art, no AI.' },
+      textCorner: 'tl',
     },
     {
       lockup: lang === 'fa' ? 'برندها' : 'BRANDS',
       caption: { top: 'COLLECTION', sub: '80+ partners — Amazon, Steam, PlayStation, Netflix, and more.' },
+      textCorner: 'cr',
     },
     {
       lockup: t('cta_buy_gift').replace(/[→↗←↑↓]/g, '').trim() || 'BUY',
       caption: { top: 'NEXT', sub: 'Scroll to the gallery, or jump straight to the shop.' },
+      textCorner: 'br',
     },
   ];
-  const safeP = typeof p === 'number' && isFinite(p) ? p : 0;
-  const stageIdx = Math.min(3, Math.max(0, Math.floor(safeP * 4 + 1e-6)));
+
+  const stageCount = STAGES.length;
+  // Effective progress for caption swap — drops to 0 if reduced motion (so
+  // only stage 0 ever renders).
+  const p = reduced ? 0 : pTick;
+  const stageIdx = Math.min(stageCount - 1, Math.max(0, Math.floor(p * stageCount)));
   const stage = STAGES[stageIdx] ?? STAGES[0];
+
+  // Hero scroll-jack region height: ~6 viewports of pinned scroll on desktop,
+  // collapsed to a single viewport on mobile (no scrub, lockups stack).
+  const heroHeight = show3D && !reduced ? '600vh' : '100vh';
 
   return (
     <main className="page">
-      {/* HERO CINEMA — single 100vh viewport, auto-play 4-stage timeline */}
       <section
-        className="hero-cinema relative overflow-hidden"
-        style={{ minHeight: '100vh', height: '100vh' }}
+        ref={heroRef}
+        className="hero-scroll relative"
+        style={{ height: heroHeight }}
       >
-        <div className="absolute inset-0 overflow-hidden">
-          {/* L0 — Full-bleed Statue3D background. Empty fallback so the page
-              shows only the page bg + lockup + captions while the GLB streams;
-              no transient placeholder shape. */}
+        <div
+          className="hero-sticky sticky top-0 w-full overflow-hidden"
+          style={{ height: '100vh' }}
+        >
+          {/* L0 — Full-bleed bust canvas */}
           <div className="absolute inset-0" style={{ zIndex: 0 }}>
             {show3D ? (
               <Suspense fallback={null}>
-                <Statue3D scrollProgress={scrollProgress} theme={theme} />
+                <Statue3D scrollProgress={scrollProgress} />
               </Suspense>
             ) : null}
           </div>
 
-          {/* L1 — Per-stage giant lockup with mix-blend-difference; each lockup
-              fades in/out around its stage boundary so the swap reads as a
-              soft cross-dissolve, not a jump. */}
+          {/* L1 — Per-stage giant lockups, scroll-blended */}
           {STAGES.map((s, i) => {
-            // Plateau opacity: full 1 for ~80% of the stage range with a
-            // 20% fade-in/out at the stage boundaries. Means stage 0 is
-            // fully readable at p=0 (mobile + initial load).
-            const d = p * 4 - i;
+            const d = p * stageCount - i;
             const op =
               d < -0.2 ? 0 :
               d < 0 ? (d + 0.2) / 0.2 :
               d < 0.8 ? 1 :
               d < 1 ? (1 - d) / 0.2 :
               0;
+            const opFinal = reduced ? (i === 0 ? 1 : 0) : op;
             return (
               <h1
                 key={i}
+                data-stage={i}
+                data-op={opFinal.toFixed(3)}
+                data-p={p.toFixed(3)}
                 className="hero-lockup font-display absolute pointer-events-none"
                 style={{
-                  top: '50%',
+                  top: '22%',
                   left: '50%',
-                  transform: 'translate(-50%, -50%)',
+                  transform: 'translate(-50%, 0)',
                   fontSize: 'var(--fs-mega)',
                   fontWeight: 700,
                   letterSpacing: '-0.05em',
                   lineHeight: 0.85,
                   color: '#ffffff',
-                  opacity: op,
+                  opacity: opFinal,
                   zIndex: 1,
                   mixBlendMode: 'difference',
                   whiteSpace: 'nowrap',
@@ -159,25 +185,27 @@ export function Home() {
             className="container-x relative h-full"
             style={{ zIndex: 3, height: '100vh' }}
           >
-            <div className="absolute mono-corner" style={{ top: 24, left: 24 }}>
+            <div
+              className="absolute mono-corner"
+              style={{ ...cornerStyle(stage.textCorner), maxWidth: '34ch', transition: 'top .35s var(--ease), bottom .35s var(--ease), left .35s var(--ease), right .35s var(--ease)' }}
+            >
               {stage.caption.top}<br />
               <span style={{ opacity: 0.75 }}>{stage.caption.sub}</span>
+            </div>
+
+            <div className="absolute mono-corner" style={{ top: 24, left: 24 }}>
+              {time} &mdash; {t('eyebrow_tehran')}
             </div>
             <div
               className="absolute mono-corner text-right"
               style={{ top: 24, right: 24 }}
             >
-              {p < 0.95 ? 'KEEP SCROLLING ↓' : 'GALLERY BELOW ↓'}<br />
-              {time} &mdash; {t('eyebrow_tehran')}
-            </div>
-            <div className="absolute mono-corner" style={{ bottom: 48, left: 24 }}>
-              80+ {t('stat_brands')} · 90s {t('stat_delivery')}<br />
-              4.9 / 5 {t('stat_rating')} · 2026
+              {p < 0.95 ? 'KEEP SCROLLING ↓' : 'GALLERY BELOW ↓'}
             </div>
             <button
               className="absolute mono-corner hover:opacity-70"
               style={{
-                bottom: 48,
+                bottom: 24,
                 right: 24,
                 borderBottom: '1px solid var(--ink)',
                 padding: '8px 0',
@@ -189,7 +217,6 @@ export function Home() {
               {t('cta_buy_gift')}
             </button>
 
-            {/* Stage indicator pill — bottom centre */}
             <div
               className="absolute"
               style={{
@@ -201,7 +228,7 @@ export function Home() {
                 zIndex: 4,
               }}
             >
-              {[0, 1, 2, 3].map((i) => (
+              {STAGES.map((_, i) => (
                 <div
                   key={i}
                   style={{

@@ -6,7 +6,7 @@ import { Icon } from '@/components/ui/Icon';
 import { t as translate } from '@/data/format';
 
 export function Header() {
-  const { lang, setLang, theme, toggleTheme, cart, openCart, fmtNumber } = useApp();
+  const { lang, setLang, cart, openCart, fmtNumber } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -67,9 +67,6 @@ export function Header() {
             <button className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>EN</button>
             <button className={lang === 'fa' ? 'active' : ''} onClick={() => setLang('fa')}>فا</button>
           </div>
-          <button className="icon-btn" onClick={toggleTheme} aria-label="Toggle theme">
-            {theme === 'light' ? <Icon.Moon /> : <Icon.Sun />}
-          </button>
           <button className="icon-btn" onClick={() => navigate('/account')} aria-label="Account">
             <Icon.User />
           </button>

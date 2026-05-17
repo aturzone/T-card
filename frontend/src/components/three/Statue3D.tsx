@@ -8,192 +8,185 @@ useGLTF.preload('/models/bust.glb', true);
 
 export type Statue3DProps = {
   scrollProgress: () => number;
-  theme?: 'light' | 'dark';
 };
 
 type BustProps = {
   scrollProgress: () => number;
-  theme: 'light' | 'dark';
 };
 
-// Smooth easing for stage transitions
-const easeInOut = (t: number) =>
-  t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+type Keyframe = {
+  p: number;
+  rotY: number;
+  rotX: number;
+  posX: number;
+  posY: number;
+  scale: number;
+  camZ: number;
+};
 
-// Map p∈[0,1] to a 4-stage piecewise progress with smooth crossfades.
-// Returns { stage: 0..3, local: 0..1 within stage, blend: smoothed local }
-function stageOf(p: number) {
-  const raw = Math.min(0.9999, Math.max(0, p)) * 4; // 0..4
-  const stage = Math.floor(raw);
-  const local = raw - stage;
-  return { stage, local, blend: easeInOut(local) };
+// First-pass keyframes derived from monolithstudio.com captures (ref-monolith-s*.png).
+// p = 0..1 progress through the pinned hero region. The bust rests at p=0
+// (facing camera, centered) and snaps poses on scroll.
+const KEYS: Keyframe[] = [
+  { p: 0.00, rotY:  0.00, rotX:  0.00, posX:  0.00, posY:  0.00, scale: 1.00, camZ: 6.4 },
+  { p: 0.20, rotY:  0.45, rotX:  0.10, posX:  0.55, posY: -0.10, scale: 1.10, camZ: 5.6 },
+  { p: 0.40, rotY:  0.20, rotX: -0.05, posX:  0.25, posY:  0.40, scale: 1.40, camZ: 4.8 },
+  { p: 0.60, rotY: -1.20, rotX:  0.00, posX: -0.45, posY:  0.20, scale: 1.15, camZ: 5.2 },
+  { p: 0.80, rotY: -2.10, rotX:  0.05, posX: -0.25, posY:  0.05, scale: 1.00, camZ: 5.6 },
+  { p: 1.00, rotY: -0.50, rotX:  0.00, posX:  0.00, posY:  0.00, scale: 0.90, camZ: 6.6 },
+];
+
+const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
+function sample(p: number) {
+  const x = Math.min(1, Math.max(0, p));
+  let i = 0;
+  while (i < KEYS.length - 1 && KEYS[i + 1].p < x) i++;
+  const a = KEYS[i];
+  const b = KEYS[Math.min(KEYS.length - 1, i + 1)];
+  const span = Math.max(1e-6, b.p - a.p);
+  const t = smoothstep((x - a.p) / span);
+  return {
+    rotY: a.rotY + (b.rotY - a.rotY) * t,
+    rotX: a.rotX + (b.rotX - a.rotX) * t,
+    posX: a.posX + (b.posX - a.posX) * t,
+    posY: a.posY + (b.posY - a.posY) * t,
+    scale: a.scale + (b.scale - a.scale) * t,
+    camZ: a.camZ + (b.camZ - a.camZ) * t,
+  };
 }
 
-function Bust({ scrollProgress, theme }: BustProps) {
+// With both X (+π/2) and Z (+π/2) baked into the cloned mesh, the face ends
+// up pointing world -Z (away from camera). Outer group Y rotation of π flips
+// it 180° to world +Z (toward camera) at the rotY=0 keyframe.
+const FACE_FORWARD_Y = Math.PI;
+
+// Pre-Z rotation around X to flip the bust so the head points up and the
+// torso cut faces down. The sign is +π/2 — verified empirically (-π/2 puts
+// the bust head-down).
+const STAND_UPRIGHT_X = Math.PI / 2;
+
+function Bust({ scrollProgress }: BustProps) {
   const ref = useRef<THREE.Group>(null);
-  const spinRef = useRef(0);
   const { scene } = useGLTF('/models/bust.glb') as unknown as {
     scene: THREE.Group;
   };
 
-  // Compute & cache the source bounding box so we can centre + scale the bust
-  // explicitly. Shift the pivot DOWN by half the bust height so the head sits
-  // at world Y≈0 (viewport vertical centre) rather than the bbox centre being
-  // at the neck — this is what plants the head INSIDE the lockup band.
-  const { cloned, normScale, bustHeight } = useMemo(() => {
+  // Bake the orientation fix into the cloned mesh so the bust is upright
+  // and facing the camera at the rotY=0 keyframe:
+  //   - rotate +π/2 around Z to stand the bust upright (its tall axis is +X
+  //     in the GLB — laid on its side natively)
+  //   - rotate +π/2 around Y to bring the carved face toward -Z (camera)
+  // The outer group ref then applies per-stage rotY around world Y.
+  const { cloned, normScale, cutBottom } = useMemo(() => {
     const c = scene.clone(true);
+    // Bake both orientation fixes:
+    //   - X rotation: head up, cut perpendicular to the floor (-π/2 around X)
+    //   - Z rotation: stand the bust upright (its tall axis is +X in the GLB)
+    // Three.js Euler default order is 'XYZ' (intrinsic), so X is applied
+    // first, then the rotated Z axis takes the bust upright.
+    c.rotation.set(STAND_UPRIGHT_X, 0, Math.PI / 2);
+    c.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(c);
     const size = new THREE.Vector3();
     box.getSize(size);
     const center = new THREE.Vector3();
     box.getCenter(center);
-    // Recentre so origin is at the bbox centre (neck/upper-chest).
     c.position.sub(center);
-    // Uniform scale: target bust height ~ 3.6 units (slightly larger than before).
     const tallest = Math.max(size.x, size.y, size.z);
-    const n = tallest > 0 ? 3.6 / tallest : 1;
-    return { cloned: c, normScale: n, bustHeight: size.y * n };
+    const n = tallest > 0 ? 2.8 / tallest : 1;
+    return {
+      cloned: c,
+      normScale: n,
+      cutBottom: -size.y * n / 2,
+    };
   }, [scene]);
 
-  // Re-shade to warm cream marble (no clearcoat — was reading plastic-y).
+  // Single-palette marble — cream-warm so it reads as sculpture against
+  // the #e0e0e0 monolith-grey canvas. No theme branch.
   useMemo(() => {
-    // Warmer cream marble — slightly brighter than before so it reads
-    // sculpted against the new black canvas backdrop.
-    const marbleColor = theme === 'dark' ? '#dcd6c9' : '#ece5d4';
     cloned.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (mesh.isMesh) {
         mesh.material = new THREE.MeshPhysicalMaterial({
-          color: marbleColor,
-          roughness: 0.5,
+          color: '#ece5d4',
+          roughness: 0.52,
           metalness: 0.0,
           sheen: 0.08,
           sheenColor: new THREE.Color('#f0e2c2'),
-          // Subtle subsurface-ish softness via emissive at 0 + low spec
           emissive: new THREE.Color('#1a1612'),
-          emissiveIntensity: 0.12,
+          emissiveIntensity: 0.08,
         });
         mesh.castShadow = true;
         mesh.receiveShadow = true;
       }
     });
-  }, [cloned, theme]);
+  }, [cloned]);
 
-  // 4-section scroll choreography — Monolith-style.
-  // Camera stays roughly stationary; the bust turns + drifts. The continuous
-  // background spin is accumulated in `spinRef` so it never gets clobbered
-  // by per-frame target-rotation writes.
-  useFrame(({ camera }, dt) => {
+  // Scroll-bound. No `dt`, no time accumulator, no Math.sin. Every transform
+  // is a pure function of scrollProgress() — bust is stone-still when scroll
+  // is stone-still.
+  useFrame(({ camera }) => {
     if (!ref.current) return;
     const p = scrollProgress();
-    const { stage, blend } = stageOf(p);
+    const k = sample(p);
 
-    // Time accumulator for the breathing wobble. NOT a full continuous spin —
-    // user wanted "shake", not a rotating display piece.
-    spinRef.current += dt;
+    ref.current.rotation.y = FACE_FORWARD_Y + k.rotY;
+    ref.current.rotation.x = k.rotX;
 
-    // Bust faces the camera. David's STL faces +X in its local frame, so a
-    // -π/2 rotation around Y brings the carved face forward to -Z.
-    const FACE_FORWARD = 0;
-    // Per-stage Y rotation offsets — small turns so the head never disappears.
-    const STAGE_ROT = [
-      FACE_FORWARD + 0.0,
-      FACE_FORWARD + 0.45,
-      FACE_FORWARD - 0.35,
-      FACE_FORWARD + 0.7,
-    ];
-    const baseRot = STAGE_ROT[stage];
-    const nextRot = STAGE_ROT[Math.min(3, stage + 1)];
-    const targetRot = THREE.MathUtils.lerp(baseRot, nextRot, blend);
-    // Subtle breathing wobble (~±5° on Y, ~±2° on X, ~12-second period).
-    const wobbleY = Math.sin(spinRef.current * 0.45) * 0.09;
-    const wobbleX = Math.sin(spinRef.current * 0.32 + 1.3) * 0.04;
-    ref.current.rotation.y = targetRot + wobbleY;
-    ref.current.rotation.x = wobbleX;
+    // Anchor the bust so its CUT (bottom of the torso) sits ~1 world unit
+    // below frame center — right above the contact-shadow plane at y=-1.7.
+    // Head then sits in the upper third of the viewport.
+    const cutAnchorY = -1.7 - cutBottom; // group offset so cutBottom lands at y=-1.7
+    ref.current.position.set(k.posX, cutAnchorY + k.posY, 0);
+    ref.current.scale.setScalar(normScale * k.scale);
 
-    // Position the bust so its HEAD sits in the upper third of the viewport
-    // (right inside the TCARD lockup band). The mesh's pivot is at its bbox
-    // centre, so we shift world Y DOWN by half its height to plant the head
-    // near origin (camera looks at 0,0,0). Small per-stage tweaks for life.
-    // Lift the bust so the head's crown is at world Y≈+0.4. Camera looks at
-    // (0, 0.1, 0), so the FACE lands near the camera target — bust reads as a
-    // proper portrait, not a top-down crown view.
-    const headLift = -bustHeight / 2 + 0.4;
-    const STAGE_BUSTY = [headLift, headLift + 0.05, headLift - 0.08, headLift + 0.12];
-    const bustY = THREE.MathUtils.lerp(
-      STAGE_BUSTY[stage],
-      STAGE_BUSTY[Math.min(3, stage + 1)],
-      blend,
-    );
-    ref.current.position.y = bustY;
-
-    // Camera: tight band — stationary X, gentle Z dolly only on stage 1.
-    const CAM_Z = [5.4, 4.4, 5.0, 5.8];
-    const camZ = THREE.MathUtils.lerp(
-      CAM_Z[stage],
-      CAM_Z[Math.min(3, stage + 1)],
-      blend,
-    );
-    camera.position.set(0, 0.4, camZ);
-    camera.lookAt(0, 0.1, 0);
+    camera.position.set(0, 0.2, k.camZ);
+    camera.lookAt(0, 0.0, 0);
   });
 
   return (
-    <primitive
-      ref={ref}
-      object={cloned}
-      scale={[normScale, normScale, normScale]}
-      position={[0, 0, 0]}
-    />
+    <group ref={ref}>
+      <primitive object={cloned} />
+    </group>
   );
 }
 
-export default function Statue3D({
-  scrollProgress,
-  theme = 'light',
-}: Statue3DProps) {
+export default function Statue3D({ scrollProgress }: Statue3DProps) {
   const prefersReduced =
     typeof window !== 'undefined' &&
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const ambient = theme === 'dark' ? 0.1 : 0.2;
-
   return (
     <Canvas
-      camera={{ position: [0, 0.4, 6], fov: 32 }}
+      camera={{ position: [0, 0.1, 6.4], fov: 32 }}
       shadows
       dpr={[1, 2]}
       aria-hidden="true"
     >
-      {/* Black backdrop — the marble glows only against deep ink (this is the
-          Monolith trick — their canvas bg is rgb(1,1,1) and the bust reads
-          like a museum spotlight against it). Works for both themes since
-          the bust is the focal anchor either way. */}
-      <color attach="background" args={['#0a0a0a']} />
-      <ambientLight intensity={ambient} />
-      {/* Dramatic warm key — top-right */}
+      {/* Single-palette canvas — matches body background (#e0e0e0) so the
+          bust dissolves into the page as a marble portrait, not a black hole. */}
+      <color attach="background" args={['#e0e0e0']} />
+      <ambientLight intensity={0.55} />
+      {/* Soft key — top-right, slightly cooler than before so the marble
+          doesn't go bone-white on a light backdrop. */}
       <directionalLight
         position={[4, 7, 5]}
-        intensity={3.2}
-        color="#fff0d4"
+        intensity={1.8}
+        color="#fff6e3"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-bias={-0.0005}
       />
-      {/* Cold rim — back-left */}
-      <directionalLight position={[-6, 1, -3]} intensity={0.9} color="#7d96b8" />
-      {/* Warm fill */}
-      <pointLight position={[2, -1, 4]} intensity={0.3} color="#fff4dc" />
+      <directionalLight position={[-6, 1, -3]} intensity={0.6} color="#a8bcd6" />
+      <pointLight position={[2, -1, 4]} intensity={0.25} color="#fff4dc" />
       <Suspense fallback={null}>
-        <Bust
-          scrollProgress={prefersReduced ? () => 0 : scrollProgress}
-          theme={theme}
-        />
+        <Bust scrollProgress={prefersReduced ? () => 0 : scrollProgress} />
         <ContactShadows
           position={[0, -1.7, 0]}
-          opacity={0.45}
+          opacity={0.32}
           scale={6}
           blur={3}
           far={3.5}
