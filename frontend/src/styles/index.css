@@ -19,6 +19,7 @@
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --fs-hero: clamp(72px, 16vw, 240px);
+  --fs-mega: clamp(120px, 22vw, 360px);
   --fs-h1: clamp(40px, 5.5vw, 72px);
   --fs-h2: clamp(28px, 3.6vw, 44px);
   --fs-h3: 22px;
@@ -549,6 +550,26 @@ input, select, textarea { font: inherit; color: inherit; }
   /* Reveal */
   .reveal { opacity: 0; transform: translateY(24px); transition: opacity .35s var(--ease-out), transform .35s var(--ease-out); }
   .reveal.in { opacity: 1; transform: none; }
+
+  /* Hero cinema — museum-card mono captions in the 4 corners */
+  .mono-corner {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    z-index: 3;
+  }
+  @media (max-width: 768px) {
+    .hero-cinema .hero-lockup {
+      mix-blend-mode: normal;
+      font-size: clamp(64px, 16vw, 120px);
+      top: 14vh;
+    }
+    .hero-cinema { min-height: 90vh; }
+    .mono-corner { font-size: 10px; }
+  }
 
   /* Confirmation */
   .confirm-check {

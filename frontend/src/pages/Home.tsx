@@ -11,6 +11,20 @@ import { CATEGORIES } from '@/data/categories';
 import { TESTIMONIALS } from '@/data/testimonials';
 import type { I18NKey } from '@/data/i18n';
 
+function useTehranClock(lang: 'en' | 'fa') {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return new Intl.DateTimeFormat(lang === 'fa' ? 'fa-IR' : 'en-US', {
+    timeZone: 'Asia/Tehran',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(now);
+}
+
 const Statue3D = lazy(() => import('@/components/three/Statue3D'));
 
 function useScrollProgress() {
@@ -36,9 +50,9 @@ export function Home() {
   const featured = BRANDS.slice(0, 4);
 
   const scrollProgress = useScrollProgress();
+  const time = useTehranClock(lang);
   const [show3D, setShow3D] = useState(false);
   useEffect(() => {
-    // Render WebGL only on >=768 viewports; static SVG below.
     const mq = window.matchMedia('(min-width: 768px)');
     setShow3D(mq.matches);
     const onChange = (e: MediaQueryListEvent) => setShow3D(e.matches);
@@ -48,115 +62,92 @@ export function Home() {
 
   return (
     <main className="page">
-      {/* HERO — Monolith-grade lockup + statue + GCards */}
-      <section className="container-x relative" style={{ paddingBlock: 'clamp(60px, 10vw, 120px) clamp(40px, 6vw, 80px)' }}>
-        <div className="hero-grid grid items-stretch gap-10 lg:gap-[64px] lg:[grid-template-columns:7fr_5fr]">
-          {/* LEFT — eyebrow, lockup, subtitle, mono action */}
-          <div className="flex flex-col justify-between" style={{ minHeight: 'clamp(420px, 70vh, 720px)' }}>
-            <div>
-              <div
-                className="font-mono uppercase text-ink-mute"
-                style={{ fontSize: 11, letterSpacing: '0.08em' }}
-              >
-                {t('hero_eyebrow')} &mdash; {t('eyebrow_tehran')}
-              </div>
-              <h1
-                className="font-display"
-                style={{
-                  fontSize: 'var(--fs-hero)',
-                  fontWeight: 700,
-                  letterSpacing: '-0.04em',
-                  lineHeight: 0.9,
-                  color: 'var(--ink)',
-                  margin: 0,
-                  marginTop: 28,
-                }}
-              >
-                {t('hero_lockup_home')}
-              </h1>
-              <p
-                className="text-ink-soft"
-                style={{
-                  fontSize: 18,
-                  maxWidth: '34ch',
-                  marginTop: 28,
-                  lineHeight: 1.5,
-                }}
-              >
-                {t('hero_sub')}
-              </p>
-            </div>
-            <div className="flex items-end justify-between gap-6 flex-wrap" style={{ marginTop: 40 }}>
-              <button
-                className="font-mono uppercase inline-flex items-center gap-2 hover:opacity-70"
-                style={{
-                  fontSize: 13,
-                  letterSpacing: '0.08em',
-                  padding: '14px 0',
-                  borderBottom: '1px solid var(--ink)',
-                  transition: 'opacity .35s var(--ease)',
-                }}
-                onClick={() => navigate('/shop')}
-              >
-                {t('cta_buy_gift')}
-              </button>
-              <div className="flex gap-6 flex-wrap" style={{ fontSize: 11 }}>
-                <div>
-                  <div className="font-display" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>{lang === 'fa' ? '۸۰+' : '80+'}</div>
-                  <div className="font-mono uppercase text-ink-mute" style={{ fontSize: 10, letterSpacing: '0.08em', marginTop: 4 }}>{t('stat_brands')}</div>
+      {/* HERO CINEMA — full-bleed bust, mix-blend-difference TCARD, 4-corner mono captions */}
+      <section
+        className="hero-cinema relative overflow-hidden"
+        style={{ minHeight: '100vh' }}
+      >
+        {/* L0 — Full-bleed Statue3D background */}
+        <div className="absolute inset-0" style={{ zIndex: 0 }}>
+          {show3D ? (
+            <Suspense
+              fallback={
+                <div className="w-full h-full flex items-center justify-center text-ink-mute">
+                  <Statue3DStatic className="w-1/2 max-w-md" />
                 </div>
-                <div>
-                  <div className="font-display" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>{lang === 'fa' ? '۹۰ ث' : '90s'}</div>
-                  <div className="font-mono uppercase text-ink-mute" style={{ fontSize: 10, letterSpacing: '0.08em', marginTop: 4 }}>{t('stat_delivery')}</div>
-                </div>
-                <div>
-                  <div className="font-display" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>4.9<span style={{ fontSize: 13, opacity: 0.5 }}>/5</span></div>
-                  <div className="font-mono uppercase text-ink-mute" style={{ fontSize: 10, letterSpacing: '0.08em', marginTop: 4 }}>{t('stat_rating')}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT — statue + GCards offset/behind */}
-          <div
-            className="hero-stage relative"
-            style={{
-              minHeight: 'clamp(420px, 70vh, 720px)',
-              width: '100%',
-            }}
-          >
-            {/* GCards positioned BEHIND and offset right, smaller — bust is hero */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 1,
-                pointerEvents: 'none',
-              }}
+              }
             >
-              <div style={{ position: 'absolute', top: '8%', right: '-6%', width: '46%', transform: 'rotate(-10deg)', filter: 'saturate(0.6) brightness(0.95)' }}>
-                <GCard brand={BRANDS[1]} amount={100} />
-              </div>
-              <div style={{ position: 'absolute', bottom: '4%', right: '4%', width: '42%', transform: 'rotate(8deg)', filter: 'saturate(0.7) brightness(0.95)' }}>
-                <GCard brand={BRANDS[3]} amount={250} />
-              </div>
-              <div style={{ position: 'absolute', top: '42%', left: '-2%', width: '38%', transform: 'rotate(-3deg)', filter: 'saturate(0.5) brightness(0.92)' }}>
-                <GCard brand={BRANDS[5]} amount={150} />
-              </div>
+              <Statue3D scrollProgress={scrollProgress} theme={theme} />
+            </Suspense>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-ink-mute">
+              <Statue3DStatic className="w-3/4 max-w-md" />
             </div>
+          )}
+        </div>
 
-            {/* The bust — center, top z-index */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 2 }}>
-              {show3D ? (
-                <Suspense fallback={<Statue3DStatic className="w-full h-full" />}>
-                  <Statue3D scrollProgress={scrollProgress} theme={theme} />
-                </Suspense>
-              ) : (
-                <Statue3DStatic className="w-full h-full" />
-              )}
-            </div>
+        {/* L1 — Giant TCARD lockup, mix-blend-difference inverts over bust */}
+        <h1
+          className="hero-lockup font-display absolute pointer-events-none"
+          style={{
+            top: '6vh',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            fontSize: 'var(--fs-mega)',
+            fontWeight: 700,
+            letterSpacing: '-0.05em',
+            lineHeight: 0.85,
+            color: '#ffffff',
+            zIndex: 1,
+            mixBlendMode: 'difference',
+            whiteSpace: 'nowrap',
+            margin: 0,
+          }}
+        >
+          {t('hero_lockup_home')}
+        </h1>
+
+        {/* L2 — Four-corner mono captions (museum specimen card) */}
+        <div
+          className="container-x relative h-full"
+          style={{ zIndex: 3, minHeight: '100vh' }}
+        >
+          <div
+            className="absolute mono-corner"
+            style={{ top: 24, left: 24 }}
+          >
+            T-CARD STUDIO<br />
+            CONTEMPORARY GIFT CARDS<br />
+            BASED IN TEHRAN
           </div>
+          <div
+            className="absolute mono-corner text-right"
+            style={{ top: 24, right: 24 }}
+          >
+            KEEP SCROLLING ↓<br />
+            {time} &mdash; {t('eyebrow_tehran')}
+          </div>
+          <div
+            className="absolute mono-corner"
+            style={{ bottom: 48, left: 24 }}
+          >
+            80+ {t('stat_brands')} · 90s {t('stat_delivery')}<br />
+            4.9 / 5 {t('stat_rating')} · 2026
+          </div>
+          <button
+            className="absolute mono-corner hover:opacity-70"
+            style={{
+              bottom: 48,
+              right: 24,
+              borderBottom: '1px solid var(--ink)',
+              padding: '8px 0',
+              transition: 'opacity .35s var(--ease)',
+              color: 'var(--ink)',
+            }}
+            onClick={() => navigate('/shop')}
+          >
+            {t('cta_buy_gift')}
+          </button>
         </div>
       </section>
 

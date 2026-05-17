@@ -18,13 +18,17 @@ vi.mock('@react-three/drei', () => {
 
   const useGLTF = Object.assign(
     () => ({ scene: fakeScene }),
-    { preload: () => undefined },
+    {
+      preload: () => undefined,
+      setDecoderPath: () => undefined,
+    },
   );
 
   return {
     useGLTF,
     Environment: () => null,
     ContactShadows: () => null,
+    Bounds: ({ children }: { children: React.ReactNode }) => children,
   };
 });
 
