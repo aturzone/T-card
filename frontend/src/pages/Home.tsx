@@ -281,11 +281,11 @@ export function Home() {
                   data-id={lk.id}
                   className="font-display absolute pointer-events-none"
                   style={{
-                    // Persian glyphs carry dots and diacritics above the
-                    // baseline. The sticky parent clips overflow, so we
-                    // push the wordmark down + give it loose line-height
-                    // on FA so the marks don't get sliced off.
-                    top: isFa ? '20%' : '12%',
+                    // Both sit near the top. FA gets loose line-height +
+                    // top padding to keep the dots clear of the sticky
+                    // overflow clip; that lets us keep its top position
+                    // close to the Latin equivalent.
+                    top: isFa ? '8%' : '12%',
                     left: '50%',
                     transform: `translate3d(-50%, ${m.y * 0.5}px, 0)`,
                     fontSize: isFa
@@ -316,7 +316,7 @@ export function Home() {
                 data-id={lk.id}
                 className="font-display absolute pointer-events-none"
                 style={{
-                  top: isFa ? '20%' : '15%',
+                  top: isFa ? '10%' : '15%',
                   left: 32,
                   transform: `translate3d(0, ${m.y * 0.5}px, 0)`,
                   fontSize: isFa
