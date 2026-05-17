@@ -31,13 +31,20 @@ type Keyframe = {
   camZ: number;
 };
 
+// Pose timeline rebuilt from the monolithstudio.com frame captures in
+// /ref-mono (p00 → p100). The reference bust rotates monotonically ~220°
+// around its vertical axis through the hero, with a scale-up peak near the
+// middle (close-up shot of the shoulders) and a settle back to normal size
+// by the end (full-frame left-profile portrait).
 const KEYS: Keyframe[] = [
   { p: 0.00, rotY:  0.00, rotX:  0.00, posX:  0.00, posY:  0.00, scale: 1.00, camZ: 6.4 },
-  { p: 0.20, rotY:  0.45, rotX:  0.10, posX:  0.55, posY: -0.10, scale: 1.10, camZ: 5.6 },
-  { p: 0.40, rotY:  0.20, rotX: -0.05, posX:  0.25, posY:  0.40, scale: 1.40, camZ: 4.8 },
-  { p: 0.60, rotY: -1.20, rotX:  0.00, posX: -0.45, posY:  0.20, scale: 1.15, camZ: 5.2 },
-  { p: 0.80, rotY: -2.10, rotX:  0.05, posX: -0.25, posY:  0.05, scale: 1.00, camZ: 5.6 },
-  { p: 1.00, rotY: -0.50, rotX:  0.00, posX:  0.00, posY:  0.00, scale: 0.90, camZ: 6.6 },
+  { p: 0.12, rotY:  0.35, rotX:  0.10, posX:  0.25, posY:  0.05, scale: 1.18, camZ: 5.6 }, // engagement zoom + slight turn
+  { p: 0.28, rotY:  0.85, rotX:  0.05, posX:  0.45, posY:  0.30, scale: 1.45, camZ: 4.8 }, // close-up, head leaning forward
+  { p: 0.42, rotY:  1.60, rotX:  0.00, posX:  0.20, posY:  0.50, scale: 1.65, camZ: 4.0 }, // peak zoom, back-3/4 view (~92°)
+  { p: 0.56, rotY:  2.40, rotX: -0.05, posX: -0.20, posY:  0.45, scale: 1.55, camZ: 4.2 }, // continuing rotation past back
+  { p: 0.70, rotY:  3.10, rotX:  0.00, posX: -0.40, posY:  0.20, scale: 1.20, camZ: 5.2 }, // emerging on the far side
+  { p: 0.85, rotY:  3.60, rotX:  0.05, posX: -0.30, posY:  0.05, scale: 1.00, camZ: 6.0 }, // settling into profile
+  { p: 1.00, rotY:  3.85, rotX:  0.00, posX: -0.15, posY:  0.00, scale: 0.90, camZ: 6.6 }, // exit, left profile portrait
 ];
 
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
