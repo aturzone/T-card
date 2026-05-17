@@ -57,16 +57,21 @@ function Bust({ scrollProgress, theme }: BustProps) {
 
   // Re-shade to warm cream marble (no clearcoat — was reading plastic-y).
   useMemo(() => {
-    const marbleColor = theme === 'dark' ? '#d8d4ca' : '#f0ebe2';
+    // Warmer cream marble — slightly brighter than before so it reads
+    // sculpted against the new black canvas backdrop.
+    const marbleColor = theme === 'dark' ? '#dcd6c9' : '#ece5d4';
     cloned.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (mesh.isMesh) {
         mesh.material = new THREE.MeshPhysicalMaterial({
           color: marbleColor,
-          roughness: 0.55,
+          roughness: 0.5,
           metalness: 0.0,
-          sheen: 0.05,
-          sheenColor: new THREE.Color('#e8dfc8'),
+          sheen: 0.08,
+          sheenColor: new THREE.Color('#f0e2c2'),
+          // Subtle subsurface-ish softness via emissive at 0 + low spec
+          emissive: new THREE.Color('#1a1612'),
+          emissiveIntensity: 0.12,
         });
         mesh.castShadow = true;
         mesh.receiveShadow = true;
@@ -83,23 +88,38 @@ function Bust({ scrollProgress, theme }: BustProps) {
     const p = scrollProgress();
     const { stage, blend } = stageOf(p);
 
-    // Continuous slow base spin — accumulates regardless of stage maths.
-    spinRef.current += dt * 0.08;
+    // Time accumulator for the breathing wobble. NOT a full continuous spin —
+    // user wanted "shake", not a rotating display piece.
+    spinRef.current += dt;
 
-    // Per-stage rotation OFFSETS (small, deliberate turns — never a full
-    // revolution between stages, so the head never disappears entirely).
-    const STAGE_ROT = [0, 0.6, 1.3, 2.1]; // radians ≈ 0°, 34°, 75°, 120°
+    // Bust faces the camera. David's STL faces +X in its local frame, so a
+    // -π/2 rotation around Y brings the carved face forward to -Z.
+    const FACE_FORWARD = 0;
+    // Per-stage Y rotation offsets — small turns so the head never disappears.
+    const STAGE_ROT = [
+      FACE_FORWARD + 0.0,
+      FACE_FORWARD + 0.45,
+      FACE_FORWARD - 0.35,
+      FACE_FORWARD + 0.7,
+    ];
     const baseRot = STAGE_ROT[stage];
     const nextRot = STAGE_ROT[Math.min(3, stage + 1)];
     const targetRot = THREE.MathUtils.lerp(baseRot, nextRot, blend);
-    ref.current.rotation.y = spinRef.current + targetRot;
+    // Subtle breathing wobble (~±5° on Y, ~±2° on X, ~12-second period).
+    const wobbleY = Math.sin(spinRef.current * 0.45) * 0.09;
+    const wobbleX = Math.sin(spinRef.current * 0.32 + 1.3) * 0.04;
+    ref.current.rotation.y = targetRot + wobbleY;
+    ref.current.rotation.x = wobbleX;
 
     // Position the bust so its HEAD sits in the upper third of the viewport
     // (right inside the TCARD lockup band). The mesh's pivot is at its bbox
     // centre, so we shift world Y DOWN by half its height to plant the head
     // near origin (camera looks at 0,0,0). Small per-stage tweaks for life.
-    const headLift = -bustHeight / 2 + 0.35; // bring head up into lockup
-    const STAGE_BUSTY = [headLift, headLift + 0.1, headLift - 0.05, headLift + 0.3];
+    // Lift the bust so the head's crown is at world Y≈+0.4. Camera looks at
+    // (0, 0.1, 0), so the FACE lands near the camera target — bust reads as a
+    // proper portrait, not a top-down crown view.
+    const headLift = -bustHeight / 2 + 0.4;
+    const STAGE_BUSTY = [headLift, headLift + 0.05, headLift - 0.08, headLift + 0.12];
     const bustY = THREE.MathUtils.lerp(
       STAGE_BUSTY[stage],
       STAGE_BUSTY[Math.min(3, stage + 1)],
@@ -146,6 +166,11 @@ export default function Statue3D({
       dpr={[1, 2]}
       aria-hidden="true"
     >
+      {/* Black backdrop — the marble glows only against deep ink (this is the
+          Monolith trick — their canvas bg is rgb(1,1,1) and the bust reads
+          like a museum spotlight against it). Works for both themes since
+          the bust is the focal anchor either way. */}
+      <color attach="background" args={['#0a0a0a']} />
       <ambientLight intensity={ambient} />
       {/* Dramatic warm key — top-right */}
       <directionalLight

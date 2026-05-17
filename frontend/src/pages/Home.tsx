@@ -27,29 +27,31 @@ function useTehranClock(lang: 'en' | 'fa') {
 
 const Statue3D = lazy(() => import('@/components/three/Statue3D'));
 
-function useHeroScrollProgress(heroRef: React.RefObject<HTMLElement>) {
-  // 0..1 mapped across the hero's full scroll range (top sticks until bottom).
+function useAutoTimeline(cycleMs: number) {
+  // Returns a 0..1 progress that auto-advances on a timer, looping forever.
+  // The bust + lockup choreography runs off this instead of scroll position —
+  // the entire hero plays its 4-stage sequence inside a single 100vh frame.
   const ref = useRef(0);
-  const [stateP, setStateP] = useState(0); // for UI bindings that need re-render
+  const [stateP, setStateP] = useState(0);
   useEffect(() => {
-    const tick = () => {
-      const el = heroRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const sticky = -rect.top;
-      const max = Math.max(1, rect.height - window.innerHeight);
-      const p = Math.min(1, Math.max(0, sticky / max));
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      ref.current = 0;
+      setStateP(0);
+      return;
+    }
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const elapsed = (now - start) % cycleMs;
+      const p = elapsed / cycleMs;
       ref.current = p;
       setStateP(p);
+      raf = requestAnimationFrame(tick);
     };
-    tick();
-    window.addEventListener('scroll', tick, { passive: true });
-    window.addEventListener('resize', tick);
-    return () => {
-      window.removeEventListener('scroll', tick);
-      window.removeEventListener('resize', tick);
-    };
-  }, [heroRef]);
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [cycleMs]);
   return { getter: () => ref.current, p: stateP };
 }
 
@@ -58,8 +60,8 @@ export function Home() {
   const navigate = useNavigate();
   const featured = BRANDS.slice(0, 4);
 
-  const heroRef = useRef<HTMLElement>(null);
-  const { getter: scrollProgress, p } = useHeroScrollProgress(heroRef);
+  // 14s full cycle — feels close to Monolith's relaxed cadence
+  const { getter: scrollProgress, p } = useAutoTimeline(14000);
   const time = useTehranClock(lang);
   const [show3D, setShow3D] = useState(false);
   useEffect(() => {
@@ -89,23 +91,18 @@ export function Home() {
       caption: { top: 'NEXT', sub: 'Scroll to the gallery, or jump straight to the shop.' },
     },
   ];
-  const stageIdx = Math.min(3, Math.floor(p * 4 + 1e-6));
-  const stage = STAGES[stageIdx];
-  const stageBlend = Math.max(0, Math.min(1, p * 4 - stageIdx));
+  const safeP = typeof p === 'number' && isFinite(p) ? p : 0;
+  const stageIdx = Math.min(3, Math.max(0, Math.floor(safeP * 4 + 1e-6)));
+  const stage = STAGES[stageIdx] ?? STAGES[0];
 
   return (
     <main className="page">
-      {/* HERO SCROLLJACK — 4 sticky scroll sections sharing the bust canvas */}
+      {/* HERO CINEMA — single 100vh viewport, auto-play 4-stage timeline */}
       <section
-        ref={heroRef}
-        className="hero-cinema relative"
-        style={{ minHeight: '400vh' }}
+        className="hero-cinema relative overflow-hidden"
+        style={{ minHeight: '100vh', height: '100vh' }}
       >
-        {/* Sticky stage — the bust + lockup + captions stay pinned for 4 viewports of scroll */}
-        <div
-          className="sticky overflow-hidden"
-          style={{ top: 0, height: '100vh' }}
-        >
+        <div className="absolute inset-0 overflow-hidden">
           {/* L0 — Full-bleed Statue3D background. Empty fallback so the page
               shows only the page bg + lockup + captions while the GLB streams;
               no transient placeholder shape. */}
@@ -219,8 +216,6 @@ export function Home() {
             </div>
           </div>
         </div>
-        {/* invisible — silences unused vars when stageBlend isn't read elsewhere */}
-        <span style={{ display: 'none' }} aria-hidden>{stageBlend}</span>
       </section>
 
       {/* FEATURED — editorial 2/3-col, hairline dividers */}

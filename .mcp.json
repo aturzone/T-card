@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--executable-path",
+        "/snap/brave/current/opt/brave.com/brave/brave",
+        "--no-sandbox",
+        "--headless",
+        "--ignore-https-errors"
+      ]
+    }
+  }
+}
