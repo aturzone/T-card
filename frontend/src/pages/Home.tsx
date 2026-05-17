@@ -1,150 +1,306 @@
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { Icon } from '@/components/ui/Icon';
 import { Reveal } from '@/components/ui/Reveal';
 import { GCard } from '@/components/product/GCard';
+import { Icon } from '@/components/ui/Icon';
 import { ProductTile } from '@/components/product/ProductTile';
+import { Statue3DStatic } from '@/components/three';
 import { BRANDS } from '@/data/brands';
 import { CATEGORIES } from '@/data/categories';
 import { TESTIMONIALS } from '@/data/testimonials';
 import type { I18NKey } from '@/data/i18n';
 
+const Statue3D = lazy(() => import('@/components/three/Statue3D'));
+
+function useScrollProgress() {
+  const ref = useRef(0);
+  useEffect(() => {
+    const tick = () => {
+      ref.current = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
+    };
+    tick();
+    window.addEventListener('scroll', tick, { passive: true });
+    window.addEventListener('resize', tick);
+    return () => {
+      window.removeEventListener('scroll', tick);
+      window.removeEventListener('resize', tick);
+    };
+  }, []);
+  return () => ref.current;
+}
+
 export function Home() {
-  const { lang, t } = useApp();
+  const { lang, t, theme } = useApp();
   const navigate = useNavigate();
   const featured = BRANDS.slice(0, 4);
 
+  const scrollProgress = useScrollProgress();
+  const [show3D, setShow3D] = useState(false);
+  useEffect(() => {
+    // Render WebGL only on >=768 viewports; static SVG below.
+    const mq = window.matchMedia('(min-width: 768px)');
+    setShow3D(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setShow3D(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   return (
     <main className="page">
-      {/* HERO */}
+      {/* HERO — Monolith-grade lockup + statue + GCards */}
       <section className="container-x relative" style={{ paddingBlock: 'clamp(60px, 10vw, 120px) clamp(40px, 6vw, 80px)' }}>
-        <div className="hero-ambient" aria-hidden="true" />
-        <div className="hero-grid grid items-center gap-10 lg:gap-[80px] lg:[grid-template-columns:1.1fr_1fr]">
-          <div>
-            <div className="eyebrow">{t('hero_eyebrow')}</div>
-            <h1 className="display hero-title text-hero" style={{ marginTop: 18 }}>
-              {t('hero_title_a')}<br />
-              <span className="italic" style={{ color: 'var(--accent)' }}>{t('hero_title_b')}</span>
-            </h1>
-            <p style={{ fontSize: 18, color: 'var(--ink-soft)', maxWidth: '50ch', marginTop: 28, lineHeight: 1.55 }}>{t('hero_sub')}</p>
-            <div className="flex gap-3 flex-wrap" style={{ marginTop: 40 }}>
-              <button className="btn btn-primary btn-lg" onClick={() => navigate('/shop')}>
-                {t('shop_now')} <Icon.Arrow />
-              </button>
-              <button className="btn btn-ghost btn-lg" onClick={() => navigate('/how')}>{t('learn')}</button>
+        <div className="hero-grid grid items-stretch gap-10 lg:gap-[64px] lg:[grid-template-columns:7fr_5fr]">
+          {/* LEFT — eyebrow, lockup, subtitle, mono action */}
+          <div className="flex flex-col justify-between" style={{ minHeight: 'clamp(420px, 70vh, 720px)' }}>
+            <div>
+              <div
+                className="font-mono uppercase text-ink-mute"
+                style={{ fontSize: 11, letterSpacing: '0.08em' }}
+              >
+                {t('hero_eyebrow')} &mdash; {t('eyebrow_tehran')}
+              </div>
+              <h1
+                className="font-display"
+                style={{
+                  fontSize: 'var(--fs-hero)',
+                  fontWeight: 700,
+                  letterSpacing: '-0.04em',
+                  lineHeight: 0.9,
+                  color: 'var(--ink)',
+                  margin: 0,
+                  marginTop: 28,
+                }}
+              >
+                {t('hero_lockup_home')}
+              </h1>
+              <p
+                className="text-ink-soft"
+                style={{
+                  fontSize: 18,
+                  maxWidth: '34ch',
+                  marginTop: 28,
+                  lineHeight: 1.5,
+                }}
+              >
+                {t('hero_sub')}
+              </p>
             </div>
-            <div className="hero-stats flex gap-10 flex-wrap" style={{ marginTop: 56 }}>
-              <div>
-                <div className="hero-stat-num font-display text-[38px] leading-none">{lang === 'fa' ? '۸۰+' : '80+'}</div>
-                <div className="font-mono uppercase text-ink-mute text-[12px] mt-1.5" style={{ letterSpacing: '.08em' }}>{t('stat_brands')}</div>
-              </div>
-              <div>
-                <div className="hero-stat-num font-display text-[38px] leading-none">{lang === 'fa' ? '۹۰ ثانیه' : '90s'}</div>
-                <div className="font-mono uppercase text-ink-mute text-[12px] mt-1.5" style={{ letterSpacing: '.08em' }}>{t('stat_delivery')}</div>
-              </div>
-              <div>
-                <div className="hero-stat-num font-display text-[38px] leading-none">4.9<span style={{ fontSize: 18, opacity: 0.5 }}>/5</span></div>
-                <div className="font-mono uppercase text-ink-mute text-[12px] mt-1.5" style={{ letterSpacing: '.08em' }}>{t('stat_rating')}</div>
+            <div className="flex items-end justify-between gap-6 flex-wrap" style={{ marginTop: 40 }}>
+              <button
+                className="font-mono uppercase inline-flex items-center gap-2 hover:opacity-70"
+                style={{
+                  fontSize: 13,
+                  letterSpacing: '0.08em',
+                  padding: '14px 0',
+                  borderBottom: '1px solid var(--ink)',
+                  transition: 'opacity .35s var(--ease)',
+                }}
+                onClick={() => navigate('/shop')}
+              >
+                {t('cta_buy_gift')}
+              </button>
+              <div className="flex gap-6 flex-wrap" style={{ fontSize: 11 }}>
+                <div>
+                  <div className="font-display" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>{lang === 'fa' ? '۸۰+' : '80+'}</div>
+                  <div className="font-mono uppercase text-ink-mute" style={{ fontSize: 10, letterSpacing: '0.08em', marginTop: 4 }}>{t('stat_brands')}</div>
+                </div>
+                <div>
+                  <div className="font-display" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>{lang === 'fa' ? '۹۰ ث' : '90s'}</div>
+                  <div className="font-mono uppercase text-ink-mute" style={{ fontSize: 10, letterSpacing: '0.08em', marginTop: 4 }}>{t('stat_delivery')}</div>
+                </div>
+                <div>
+                  <div className="font-display" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>4.9<span style={{ fontSize: 13, opacity: 0.5 }}>/5</span></div>
+                  <div className="font-mono uppercase text-ink-mute" style={{ fontSize: 10, letterSpacing: '0.08em', marginTop: 4 }}>{t('stat_rating')}</div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="hero-visual">
-            <div className="hero-card"><GCard brand={BRANDS[1]} amount={100} /></div>
-            <div className="hero-card"><GCard brand={BRANDS[3]} amount={250} /></div>
-            <div className="hero-card"><GCard brand={BRANDS[5]} amount={150} /></div>
+          {/* RIGHT — statue + GCards offset/behind */}
+          <div
+            className="hero-stage relative"
+            style={{
+              minHeight: 'clamp(420px, 70vh, 720px)',
+              width: '100%',
+            }}
+          >
+            {/* GCards positioned BEHIND and offset right, smaller — bust is hero */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 1,
+                pointerEvents: 'none',
+              }}
+            >
+              <div style={{ position: 'absolute', top: '8%', right: '-6%', width: '46%', transform: 'rotate(-10deg)', filter: 'saturate(0.6) brightness(0.95)' }}>
+                <GCard brand={BRANDS[1]} amount={100} />
+              </div>
+              <div style={{ position: 'absolute', bottom: '4%', right: '4%', width: '42%', transform: 'rotate(8deg)', filter: 'saturate(0.7) brightness(0.95)' }}>
+                <GCard brand={BRANDS[3]} amount={250} />
+              </div>
+              <div style={{ position: 'absolute', top: '42%', left: '-2%', width: '38%', transform: 'rotate(-3deg)', filter: 'saturate(0.5) brightness(0.92)' }}>
+                <GCard brand={BRANDS[5]} amount={150} />
+              </div>
+            </div>
+
+            {/* The bust — center, top z-index */}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 2 }}>
+              {show3D ? (
+                <Suspense fallback={<Statue3DStatic className="w-full h-full" />}>
+                  <Statue3D scrollProgress={scrollProgress} theme={theme} />
+                </Suspense>
+              ) : (
+                <Statue3DStatic className="w-full h-full" />
+              )}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* FEATURED */}
+      {/* FEATURED — editorial 2/3-col, hairline dividers */}
       <section className="container-x section-padding">
-        <div className="flex justify-between items-end gap-6 flex-wrap" style={{ marginBottom: 56 }}>
-          <div>
-            <div className="eyebrow">{t('featured_eye')}</div>
-            <h2 className="font-display max-w-[22ch] leading-[1.05]" style={{ marginTop: 12, fontSize: 'var(--fs-h2)' }}>{t('featured_h')}</h2>
-            <p className="text-ink-soft max-w-[36ch]" style={{ marginTop: 12 }}>{t('featured_d')}</p>
+        <div className="border-t border-line" style={{ paddingTop: 24, marginBottom: 40 }}>
+          <div className="font-mono uppercase text-ink-mute text-[11px]" style={{ letterSpacing: '.08em' }}>
+            {t('featured_eye')} — 01
           </div>
-          <button className="btn btn-ghost" onClick={() => navigate('/shop')}>{t('view_all')} <Icon.Arrow /></button>
+          <h2
+            className="font-display"
+            style={{ fontSize: 'var(--fs-hero)', fontWeight: 700, letterSpacing: '-.04em', lineHeight: 0.95, marginTop: 18, color: 'var(--ink)' }}
+          >
+            {t('featured_h')}
+          </h2>
+          <div className="flex justify-between items-end gap-6 flex-wrap" style={{ marginTop: 18 }}>
+            <p className="text-ink-soft max-w-[48ch]">{t('featured_d')}</p>
+            <button className="font-mono uppercase text-[12px]" style={{ letterSpacing: '.08em' }} onClick={() => navigate('/shop')}>
+              {t('view_all')} →
+            </button>
+          </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-8 md:gap-x-9 md:gap-y-11">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 border-t border-line">
           {featured.map((b, i) => (
             <Reveal key={b.id} delay={i * 80}>
-              <ProductTile brand={b} onClick={() => navigate('/product/' + b.id)} />
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* CATEGORIES */}
-      <section className="container-x" style={{ paddingBlock: 'clamp(40px, 6vw, 80px)' }}>
-        <div className="flex justify-between items-end gap-6 flex-wrap" style={{ marginBottom: 32 }}>
-          <div>
-            <div className="eyebrow">{t('cats_eye')}</div>
-            <h2 className="font-display max-w-[22ch] leading-[1.05]" style={{ marginTop: 12, fontSize: 'var(--fs-h2)' }}>{t('cats_h')}</h2>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          {CATEGORIES.slice(1).map((c) => (
-            <a key={c.id} className="cat-chip" href={`#/shop?cat=${c.id}`}>{c[lang]}</a>
-          ))}
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="container-x section-padding" id="how">
-        <div className="flex justify-between items-end gap-6 flex-wrap" style={{ marginBottom: 56 }}>
-          <div>
-            <div className="eyebrow">{t('how_eye')}</div>
-            <h2 className="font-display max-w-[22ch] leading-[1.05]" style={{ marginTop: 12, fontSize: 'var(--fs-h2)' }}>{t('how_h')}</h2>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {[1, 2, 3].map((n) => (
-            <Reveal key={n} delay={n * 100}>
-              <div className="step">
-                <div className="step-num">{lang === 'fa' ? ['۰۱', '۰۲', '۰۳'][n - 1] : `0${n}`}</div>
-                <div className="step-title">{t(`how_${n}_t` as I18NKey)}</div>
-                <div className="step-desc">{t(`how_${n}_d` as I18NKey)}</div>
+              <div className="border-b border-line lg:[&:not(:nth-child(3n))]:border-e sm:[&:nth-child(2n)]:border-e-0 lg:[&:nth-child(2n)]:border-e sm:[&:not(:nth-child(2n))]:border-e" style={{ padding: '28px 24px' }}>
+                <ProductTile brand={b} onClick={() => navigate('/product/' + b.id)} />
               </div>
             </Reveal>
           ))}
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section className="container-x section-padding">
-        <div className="flex justify-between items-end gap-6 flex-wrap" style={{ marginBottom: 56 }}>
-          <div>
-            <div className="eyebrow">{t('testi_eye')}</div>
-            <h2 className="font-display max-w-[22ch] leading-[1.05]" style={{ marginTop: 12, fontSize: 'var(--fs-h2)' }}>
-              {lang === 'fa' ? 'مردم درباره ما چه می‌گویند' : 'What people are saying'}
-            </h2>
+      {/* CATEGORIES — mono pill row */}
+      <section className="container-x" style={{ paddingBlock: 'clamp(40px, 6vw, 80px)' }}>
+        <div className="border-t border-line" style={{ paddingTop: 24, marginBottom: 32 }}>
+          <div className="font-mono uppercase text-ink-mute text-[11px]" style={{ letterSpacing: '.08em' }}>
+            {t('cats_eye')} — 02
           </div>
+          <h2
+            className="font-display"
+            style={{ fontSize: 'var(--fs-hero)', fontWeight: 700, letterSpacing: '-.04em', lineHeight: 0.95, marginTop: 18, color: 'var(--ink)' }}
+          >
+            {t('cats_h')}
+          </h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-8 md:gap-x-9 md:gap-y-11">
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.slice(1).map((c) => (
+            <a
+              key={c.id}
+              className="font-mono text-[12px] border border-line hover:border-ink"
+              style={{ padding: '8px 14px', borderRadius: 'var(--radius-pill)', letterSpacing: '.02em' }}
+              href={`#/shop?cat=${c.id}`}
+            >
+              {c[lang]}
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* HOW IT WORKS — numbered editorial list */}
+      <section className="container-x section-padding" id="how">
+        <div className="border-t border-line" style={{ paddingTop: 24, marginBottom: 32 }}>
+          <div className="font-mono uppercase text-ink-mute text-[11px]" style={{ letterSpacing: '.08em' }}>
+            {t('how_eye')} — 03
+          </div>
+          <h2
+            className="font-display"
+            style={{ fontSize: 'var(--fs-hero)', fontWeight: 700, letterSpacing: '-.04em', lineHeight: 0.95, marginTop: 18, color: 'var(--ink)' }}
+          >
+            {t('how_h')}
+          </h2>
+        </div>
+        <ol className="flex flex-col" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {[1, 2, 3].map((n) => (
+            <Reveal key={n} delay={n * 100}>
+              <li
+                className="grid items-start gap-6 md:gap-12 border-t border-line"
+                style={{ gridTemplateColumns: '80px 1fr', padding: '36px 0' }}
+              >
+                <div
+                  className="font-mono text-ink-mute text-[12px]"
+                  style={{ letterSpacing: '.08em', paddingTop: 8 }}
+                >
+                  {lang === 'fa' ? ['۰۱', '۰۲', '۰۳'][n - 1] : `0${n}`}
+                </div>
+                <div>
+                  <div
+                    className="font-display"
+                    style={{ fontSize: 'clamp(28px, 4vw, 48px)', fontWeight: 700, letterSpacing: '-.03em', lineHeight: 1.05, color: 'var(--ink)' }}
+                  >
+                    {t(`how_${n}_t` as I18NKey)}
+                  </div>
+                  <p className="text-ink-soft max-w-[52ch]" style={{ marginTop: 12, fontSize: 16, lineHeight: 1.6 }}>
+                    {t(`how_${n}_d` as I18NKey)}
+                  </p>
+                </div>
+              </li>
+            </Reveal>
+          ))}
+          <li className="border-t border-line" style={{ listStyle: 'none' }} />
+        </ol>
+      </section>
+
+      {/* TESTIMONIALS — vertical stack of single large quotes */}
+      <section className="container-x section-padding">
+        <div className="border-t border-line" style={{ paddingTop: 24, marginBottom: 32 }}>
+          <div className="font-mono uppercase text-ink-mute text-[11px]" style={{ letterSpacing: '.08em' }}>
+            {t('testi_eye')} — 04
+          </div>
+          <h2
+            className="font-display"
+            style={{ fontSize: 'var(--fs-hero)', fontWeight: 700, letterSpacing: '-.04em', lineHeight: 0.95, marginTop: 18, color: 'var(--ink)' }}
+          >
+            {lang === 'fa' ? 'مردم درباره ما چه می‌گویند' : 'What people are saying'}
+          </h2>
+        </div>
+        <div className="flex flex-col">
           {TESTIMONIALS.map((tt, i) => (
             <Reveal key={i} delay={i * 80}>
               <figure
-                className="border border-line bg-bg-card h-full m-0 flex flex-col justify-between gap-6"
-                style={{ padding: 32, borderRadius: 'var(--radius-lg)' }}
+                className="border-t border-line m-0"
+                style={{ padding: '48px 0' }}
               >
-                <blockquote className="font-display m-0" style={{ fontSize: 22, lineHeight: 1.4, textWrap: 'pretty' as 'pretty' }}>
-                  <span className="italic" style={{ color: 'var(--accent)' }}>“</span>
-                  {tt.quote[lang]}
-                  <span className="italic" style={{ color: 'var(--accent)' }}>”</span>
+                <blockquote
+                  className="font-display m-0"
+                  style={{ fontSize: 'clamp(24px, 3.2vw, 40px)', fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.2, maxWidth: '32ch', color: 'var(--ink)', textWrap: 'pretty' as 'pretty' }}
+                >
+                  “{tt.quote[lang]}”
                 </blockquote>
-                <figcaption>
-                  <div className="text-[14px] font-medium">{tt.name[lang]}</div>
-                  <div className="text-[12px] text-ink-mute mt-0.5">{tt.role[lang]}</div>
+                <figcaption
+                  className="font-mono uppercase text-ink-mute text-[11px]"
+                  style={{ letterSpacing: '.08em', marginTop: 20 }}
+                >
+                  — {tt.name[lang]}, {tt.role[lang]}
                 </figcaption>
               </figure>
             </Reveal>
           ))}
+          <div className="border-t border-line" />
         </div>
       </section>
 
-      {/* CTA */}
+      {/* CTA — dark surface, sharp button */}
       <section className="container-x section-padding">
         <Reveal>
           <div
@@ -153,16 +309,26 @@ export function Home() {
               padding: 'clamp(50px, 8vw, 100px) clamp(30px, 6vw, 80px)',
               background: 'var(--ink)',
               color: 'var(--bg)',
-              borderRadius: 'var(--radius-lg)',
               gridTemplateColumns: '1.4fr 1fr',
             }}
           >
             <div>
-              <h2 className="display" style={{ fontSize: 'var(--fs-h1)', maxWidth: '14ch', lineHeight: 1.05 }}>{t('cta_h')}</h2>
+              <div
+                className="font-mono uppercase text-[11px]"
+                style={{ letterSpacing: '.08em', opacity: 0.6 }}
+              >
+                {t('featured_eye')} — 05
+              </div>
+              <h2
+                className="display"
+                style={{ fontSize: 'var(--fs-h1)', fontWeight: 700, letterSpacing: '-.04em', maxWidth: '14ch', lineHeight: 1.0, marginTop: 18 }}
+              >
+                {t('cta_h')}
+              </h2>
               <p style={{ opacity: 0.7, marginTop: 18, maxWidth: '42ch', fontSize: 16 }}>{t('cta_sub')}</p>
               <button
-                className="btn btn-lg"
-                style={{ background: 'var(--bg)', color: 'var(--ink)', marginTop: 32 }}
+                className="font-mono uppercase text-[12px] inline-flex items-center gap-2"
+                style={{ background: 'var(--bg)', color: 'var(--ink)', padding: '14px 22px', marginTop: 32, letterSpacing: '.08em', borderRadius: 0 }}
                 onClick={() => navigate('/shop')}
               >
                 {t('cta_btn')} <Icon.Arrow />

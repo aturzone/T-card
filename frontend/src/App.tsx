@@ -53,7 +53,6 @@ export function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/confirmation/:id" element={<Confirmation />} />
           <Route path="/about" element={<About />} />
-          <Route path="/about/" element={<Navigate to="/about" replace />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/how" element={<How />} />

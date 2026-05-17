@@ -100,12 +100,12 @@ describe('cart + checkout flow', () => {
 describe('shop filters', () => {
   test('changing category filter rerenders without crash', async () => {
     bootAt('/shop');
-    expect(screen.getByText(/All gift cards/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/BRANDS/).length).toBeGreaterThan(0);
     // Click first non-"all" category chip
     const chip = screen.getByRole('button', { name: 'Gaming' });
     fireEvent.click(chip);
     // Page still alive
-    expect(screen.getByText(/All gift cards/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/BRANDS/).length).toBeGreaterThan(0);
   });
 
   test('search input narrows tile list', async () => {

@@ -64,9 +64,9 @@ export default {
         'ease-out': 'var(--ease-out)',
       },
       transitionDuration: {
-        fast: '180ms',
-        DEFAULT: '320ms',
-        slow: '600ms',
+        fast: '120ms',
+        DEFAULT: '350ms',
+        slow: '700ms',
       },
       maxWidth: {
         container: '1400px',

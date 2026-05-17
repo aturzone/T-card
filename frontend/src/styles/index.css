@@ -1,3 +1,10 @@
+/* Fontsource — display + body + mono, only the weights we use */
+@import "@fontsource/inter-tight/400.css";
+@import "@fontsource/inter-tight/700.css";
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/jetbrains-mono/400.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,11 +14,11 @@
    ============================================ */
 
 :root {
-  --font-display: "Instrument Serif", "Times New Roman", serif;
-  --font-body: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Inter Tight", "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  --fs-hero: clamp(56px, 9vw, 120px);
+  --fs-hero: clamp(72px, 16vw, 240px);
   --fs-h1: clamp(40px, 5.5vw, 72px);
   --fs-h2: clamp(28px, 3.6vw, 44px);
   --fs-h3: 22px;
@@ -21,65 +28,65 @@
 
   --pad-x: clamp(20px, 5vw, 64px);
   --pad-section: clamp(60px, 9vw, 140px);
-  --radius-sm: 8px;
-  --radius: 14px;
-  --radius-lg: 24px;
+  --radius-sm: 0;
+  --radius: 0;
+  --radius-lg: 0;
   --radius-pill: 999px;
 
-  --ease: cubic-bezier(.22,.61,.36,1);
-  --ease-out: cubic-bezier(.16,1,.3,1);
-  --dur-fast: 180ms;
-  --dur: 320ms;
-  --dur-slow: 600ms;
+  --ease: cubic-bezier(.165,.84,.44,1);
+  --ease-out: cubic-bezier(.165,.84,.44,1);
+  --dur-fast: 120ms;
+  --dur: 350ms;
+  --dur-slow: 700ms;
 }
 
 html[data-theme="light"] {
-  --bg: #f6f1e7;
-  --bg-soft: #efe8d8;
-  --bg-card: #fbf7ee;
-  --bg-elev: #ffffff;
-  --ink: #1a1f1c;
-  --ink-soft: #4a544e;
-  --ink-mute: #8a8f88;
-  --line: rgba(26,31,28,.10);
-  --line-strong: rgba(26,31,28,.18);
-  --accent: #0f4a37;
-  --accent-ink: #f4ead5;
-  --accent-soft: #d9c8a0;
-  --gold: #b08a3e;
-  --danger: #b34a3a;
-  --success: #2f7a4d;
-  --shadow-sm: 0 1px 2px rgba(26,31,28,.06), 0 1px 1px rgba(26,31,28,.04);
-  --shadow: 0 8px 24px -8px rgba(26,31,28,.18), 0 2px 6px rgba(26,31,28,.06);
-  --shadow-lg: 0 30px 80px -30px rgba(26,31,28,.3), 0 10px 30px -10px rgba(26,31,28,.15);
+  --bg: #e8e5e0;
+  --bg-soft: #ece9e3;
+  --bg-card: #efece7;
+  --bg-elev: #f4f1ec;
+  --ink: #0a0a0a;
+  --ink-soft: #1a1a1a;
+  --ink-mute: #6e6e6e;
+  --line: rgba(10,10,10,.08);
+  --line-strong: rgba(10,10,10,.18);
+  --accent: #0a0a0a;
+  --accent-ink: #e8e5e0;
+  --accent-soft: rgba(10,10,10,.06);
+  --gold: #0a0a0a;
+  --danger: #8b1f1f;
+  --success: #1f6b3a;
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-lg: none;
 }
 
 html[data-theme="dark"] {
-  --bg: #0e1411;
-  --bg-soft: #131a16;
-  --bg-card: #161e1a;
-  --bg-elev: #1c2520;
-  --ink: #ede5d2;
-  --ink-soft: #b8b1a0;
-  --ink-mute: #76796f;
-  --line: rgba(237,229,210,.10);
-  --line-strong: rgba(237,229,210,.18);
-  --accent: #d4b87a;
-  --accent-ink: #0e1411;
-  --accent-soft: #3b4239;
-  --gold: #e0c789;
+  --bg: #0a0a0a;
+  --bg-soft: #101010;
+  --bg-card: #141414;
+  --bg-elev: #1a1a1a;
+  --ink: #e8e5e0;
+  --ink-soft: #c9c5be;
+  --ink-mute: #7a7770;
+  --line: rgba(232,229,224,.08);
+  --line-strong: rgba(232,229,224,.18);
+  --accent: #e8e5e0;
+  --accent-ink: #0a0a0a;
+  --accent-soft: rgba(232,229,224,.06);
+  --gold: #e8e5e0;
   --danger: #d97a6a;
   --success: #7ec496;
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
-  --shadow: 0 12px 30px -10px rgba(0,0,0,.6), 0 4px 10px rgba(0,0,0,.3);
-  --shadow-lg: 0 40px 100px -30px rgba(0,0,0,.7), 0 14px 40px -10px rgba(0,0,0,.5);
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-lg: none;
 }
 
 /* Persian: Estedad — a modern free Persian font similar to YekanBakh (proop.org's choice)
    Heavier display weights map to the serif role; body weights stay readable on small screens. */
 html[data-lang="fa"] {
-  --font-display: "Estedad", "Vazirmatn", "Instrument Serif", serif;
-  --font-body: "Estedad", "Vazirmatn", -apple-system, sans-serif;
+  --font-display: "Estedad", "Vazirmatn", "Inter Tight", sans-serif;
+  --font-body: "Estedad", "Vazirmatn", "Inter", -apple-system, sans-serif;
   --font-mono: "Estedad", "Vazirmatn", ui-monospace, monospace;
 
   /* Persian glyphs are wider + have higher x-height — scale display sizes down,
@@ -254,7 +261,7 @@ input, select, textarea { font: inherit; color: inherit; }
     @apply inline-flex items-center justify-center font-mono;
     position: absolute; top: 4px; right: 4px;
     min-width: 18px; height: 18px; padding: 0 5px;
-    border-radius: 9px;
+    border-radius: 0;
     background: var(--accent); color: var(--accent-ink);
     font-size: 10px; font-weight: 600;
     animation: pop var(--dur) var(--ease-out);
@@ -268,9 +275,9 @@ input, select, textarea { font: inherit; color: inherit; }
   }
   .logo-mark {
     @apply inline-flex items-center justify-center;
-    width: 36px; height: 36px; border-radius: 9px;
+    width: 36px; height: 36px; border-radius: 0;
     background: var(--accent); color: var(--accent-ink);
-    font-style: italic; font-size: 22px;
+    font-size: 22px; font-weight: 700; letter-spacing: -.04em;
     transition: transform var(--dur) var(--ease-out);
   }
   .logo:hover .logo-mark { transform: rotate(-8deg) scale(1.05); }
@@ -301,8 +308,7 @@ input, select, textarea { font: inherit; color: inherit; }
   .hero-card {
     position: absolute;
     width: 70%; aspect-ratio: 1.59 / 1;
-    border-radius: 22px;
-    box-shadow: var(--shadow-lg);
+    border-radius: 6px;
     transition: transform 1.2s var(--ease-out);
     /* No 3D context here — `transform-style: preserve-3d` was forcing the
        browser to render the inner .gcard via bilinear filtering, which
@@ -324,11 +330,10 @@ input, select, textarea { font: inherit; color: inherit; }
   .gcard {
     position: relative;
     width: 100%; aspect-ratio: 1.59 / 1;
-    border-radius: 18px;
+    border-radius: 6px;
     overflow: hidden;
     color: #fff;
-    box-shadow: var(--shadow);
-    transition: transform var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out);
+    transition: transform var(--dur-slow) var(--ease-out);
     isolation: isolate;
   }
   .gcard-inner {
@@ -346,7 +351,7 @@ input, select, textarea { font: inherit; color: inherit; }
     font-size: 11px; letter-spacing: .14em; opacity: .75;
   }
   .gcard-chip {
-    width: 38px; height: 28px; border-radius: 5px;
+    width: 38px; height: 28px; border-radius: 0;
     background: linear-gradient(135deg, rgba(255,255,255,.85), rgba(255,255,255,.4));
     position: relative;
   }
@@ -363,7 +368,7 @@ input, select, textarea { font: inherit; color: inherit; }
     transform: translateX(-100%);
     transition: transform 1s var(--ease-out);
   }
-  .gcard:hover { transform: translate3d(0, -6px, 0); box-shadow: var(--shadow-lg); }
+  .gcard:hover { transform: translate3d(0, -6px, 0); }
   /* Hero stack: skip the .gcard hover-lift so the parent .hero-card's
      hover transform owns the motion — combining both was producing the
      sub-pixel blur on the third card. */
@@ -428,23 +433,22 @@ input, select, textarea { font: inherit; color: inherit; }
     position: fixed; top: 0; right: 0; bottom: 0; z-index: 100;
     width: min(460px, 100vw);
     background: var(--bg);
-    border-left: 1px solid var(--line);
+    border-left: 1px solid var(--line-strong);
     display: flex; flex-direction: column;
     transform: translateX(100%);
     transition: transform var(--dur-slow) var(--ease-out);
-    box-shadow: var(--shadow-lg);
   }
   html[dir="rtl"] .drawer { right: auto; left: 0; border-left: none; border-right: 1px solid var(--line); transform: translateX(-100%); }
   .drawer.open { transform: translateX(0); }
 
   .cart-item { display: grid; grid-template-columns: 80px 1fr auto; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); align-items: center; }
   .cart-item:last-child { border-bottom: 0; }
-  .cart-item .mini-card { width: 80px; aspect-ratio: 1.59/1; border-radius: 8px; box-shadow: var(--shadow-sm); }
+  .cart-item .mini-card { width: 80px; aspect-ratio: 1.59/1; border-radius: 0; }
   .cart-item-name { @apply font-display; font-size: 18px; line-height: 1.2; }
   .cart-item-meta { @apply font-mono text-ink-mute; font-size: 12px; }
   .qty-btn {
     @apply inline-flex items-center justify-center border border-line-strong;
-    width: 24px; height: 24px; border-radius: 6px; font-size: 14px;
+    width: 24px; height: 24px; border-radius: 0; font-size: 14px;
     transition: all var(--dur-fast);
   }
   .qty-btn:hover { background: var(--bg-soft); }
@@ -486,7 +490,7 @@ input, select, textarea { font: inherit; color: inherit; }
   /* Checkout steps */
   .cstep { flex: 1; display: flex; flex-direction: column; gap: 8px; opacity: .4; transition: opacity var(--dur); }
   .cstep.active, .cstep.done { opacity: 1; }
-  .cstep .bar { height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .cstep .bar { height: 1px; background: var(--line-strong); overflow: hidden; }
   .cstep.active .bar, .cstep.done .bar { background: var(--accent); }
   .cstep .label { @apply font-mono uppercase flex; gap: 8px; font-size: 12px; letter-spacing: .08em; }
 
@@ -543,7 +547,7 @@ input, select, textarea { font: inherit; color: inherit; }
   .page { animation: pageIn var(--dur-slow) var(--ease-out); }
 
   /* Reveal */
-  .reveal { opacity: 0; transform: translateY(20px); transition: opacity .8s var(--ease-out), transform .8s var(--ease-out); }
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .35s var(--ease-out), transform .35s var(--ease-out); }
   .reveal.in { opacity: 1; transform: none; }
 
   /* Confirmation */
@@ -579,10 +583,10 @@ input, select, textarea { font: inherit; color: inherit; }
     position: fixed; bottom: 30px; left: 50%;
     transform: translateX(-50%) translateY(80px);
     background: var(--ink); color: var(--bg);
-    padding: 14px 24px; border-radius: var(--radius-pill);
-    font-size: 14px;
+    padding: 12px 22px; border-radius: 0;
+    font-family: var(--font-mono);
+    font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
     z-index: 200;
-    box-shadow: var(--shadow-lg);
     opacity: 0;
     transition: all var(--dur) var(--ease-out);
   }
@@ -605,64 +609,9 @@ input, select, textarea { font: inherit; color: inherit; }
     border-radius: var(--radius-sm);
   }
 
-  /* Hero ambient — full-coverage radial gradients, not fixed-size circular
-     blobs. Two soft glows: accent in the trailing-top corner, gold in the
-     leading-bottom corner. Scales perfectly with viewport, no visible edges.
-
-     The hero <section> still gets `position: relative` from the React markup,
-     so the absolutely-positioned ::before just paints behind the grid. */
-  .hero-ambient {
-    position: absolute;
-    /* Span the full viewport width, ignoring the parent container's max-width
-       (1400px) and side padding. The 50%/translateX(-50%) trick anchors the
-       layer to the viewport instead of the container. */
-    top: 0;
-    bottom: 0;
-    left: 50%;
-    width: 100vw;
-    transform: translateX(-50%);
-    z-index: 0;
-    pointer-events: none;
-    background:
-      radial-gradient(
-        ellipse 60% 50% at 95% 0%,
-        color-mix(in oklch, var(--accent) 18%, transparent) 0%,
-        transparent 60%
-      ),
-      radial-gradient(
-        ellipse 50% 45% at 5% 0%,
-        color-mix(in oklch, var(--gold) 14%, transparent) 0%,
-        transparent 60%
-      );
-    /* Auto-flip in RTL: swap the two corner anchors */
-  }
-  html[dir="rtl"] .hero-ambient {
-    background:
-      radial-gradient(
-        ellipse 60% 50% at 5% 0%,
-        color-mix(in oklch, var(--accent) 18%, transparent) 0%,
-        transparent 60%
-      ),
-      radial-gradient(
-        ellipse 50% 45% at 95% 0%,
-        color-mix(in oklch, var(--gold) 14%, transparent) 0%,
-        transparent 60%
-      );
-  }
-  /* Make sure the hero grid sits above the ambient layer */
+  /* Hero ambient — removed in redesign (Monolith aesthetic = flat, no gradients).
+     `.hero-grid` keeps its stacking context for any descendants relying on it. */
   .hero-grid { position: relative; z-index: 1; }
-  @media (max-width: 700px) {
-    .hero-ambient {
-      background:
-        radial-gradient(ellipse 80% 40% at 100% 0%, color-mix(in oklch, var(--accent) 14%, transparent) 0%, transparent 65%),
-        radial-gradient(ellipse 70% 35% at 0% 0%, color-mix(in oklch, var(--gold) 10%, transparent) 0%, transparent 65%);
-    }
-    html[dir="rtl"] .hero-ambient {
-      background:
-        radial-gradient(ellipse 80% 40% at 0% 0%, color-mix(in oklch, var(--accent) 14%, transparent) 0%, transparent 65%),
-        radial-gradient(ellipse 70% 35% at 100% 0%, color-mix(in oklch, var(--gold) 10%, transparent) 0%, transparent 65%);
-    }
-  }
 
   html[dir="rtl"] .nav a::after { transform-origin: center; }
 }

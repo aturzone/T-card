@@ -133,4 +133,19 @@ export const I18N = {
   ft_legal:     { en: 'Legal',      fa: 'حقوقی' },
   ft_tagline:   { en: 'Gift cards, beautifully delivered. Since 2019.', fa: 'کارت‌های هدیه، با ظرافت تحویل داده شده. از سال ۱۳۹۸.' },
   ft_rights:    { en: '© 2026 T-Card. All rights reserved.', fa: '© ۲۰۲۶ تی‌کارت. تمام حقوق محفوظ است.' },
+
+  // Wave-2 redesign — page-name lockups + supporting mono labels.
+  hero_lockup_brands:   { en: 'BRANDS',        fa: 'برندها' },
+  hero_lockup_about:    { en: 'ABOUT',         fa: 'درباره' },
+  hero_lockup_faq:      { en: 'QUESTIONS',     fa: 'پرسش‌ها' },
+  hero_lockup_contact:  { en: 'CONTACT',       fa: 'تماس' },
+  hero_lockup_how:      { en: 'HOW IT WORKS',  fa: 'چگونه کار می‌کند' },
+  hero_lockup_account:  { en: 'ACCOUNT',       fa: 'حساب' },
+  hero_lockup_legal:    { en: 'LEGAL',         fa: 'قوانین' },
+  hero_lockup_confirm:  { en: 'THANK YOU',     fa: 'سپاسگزاریم' },
+  hero_lockup_404:      { en: '404',           fa: '۴۰۴' },
+  hero_lockup_checkout: { en: 'CHECKOUT',      fa: 'پرداخت' },
+  hero_lockup_home:     { en: 'TCARD',         fa: 'تی‌کارت' },
+  eyebrow_tehran:       { en: 'TEHRAN — ONLINE', fa: 'تهران — آنلاین' },
+  cta_buy_gift:         { en: 'BUY GIFT →',    fa: 'خرید کارت ←' },
 } satisfies Record<string, LocalizedString>;

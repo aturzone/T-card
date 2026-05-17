@@ -25,6 +25,17 @@ interface PaymentOption {
   icon: ReactNode;
 }
 
+const inputCls =
+  'border-0 border-b border-line focus:border-ink rounded-none bg-transparent';
+const inputStyle: React.CSSProperties = {
+  padding: '10px 0',
+  fontSize: 16,
+  outline: 'none',
+  width: '100%',
+};
+const labelCls = 'font-mono uppercase text-ink-mute text-[11px]';
+const labelStyle: React.CSSProperties = { letterSpacing: '.08em' };
+
 export function Checkout() {
   const { lang, t, fmtPrice, fmtNumber, cart, clearCart } = useApp();
   const navigate = useNavigate();
@@ -48,10 +59,40 @@ export function Checkout() {
 
   if (cart.length === 0) {
     return (
-      <main className="page container-x text-center" style={{ paddingBlock: 'clamp(60px, 10vw, 140px)' }}>
-        <div className="font-display" style={{ fontSize: 'var(--fs-h2)', marginBottom: 12 }}>{t('cart_empty')}</div>
-        <p className="text-ink-soft" style={{ marginBottom: 30 }}>{t('cart_empty_d')}</p>
-        <button className="btn btn-primary btn-lg" onClick={() => navigate('/shop')}>{t('shop_now')}</button>
+      <main className="page container-x" style={{ paddingBlock: 'clamp(60px, 10vw, 140px)' }}>
+        <div className="font-mono uppercase text-ink-mute text-[11px]" style={{ letterSpacing: '.08em' }}>
+          {t('checkout')}
+        </div>
+        <h1
+          className="display"
+          style={{
+            fontSize: 'var(--fs-hero)',
+            fontWeight: 700,
+            letterSpacing: '-.04em',
+            lineHeight: 0.95,
+            color: 'var(--ink)',
+            marginTop: 18,
+          }}
+        >
+          {t('cart_empty')}
+        </h1>
+        <p className="text-ink-soft" style={{ marginTop: 20, fontSize: 18, maxWidth: '60ch' }}>
+          {t('cart_empty_d')}
+        </p>
+        <button
+          className="font-mono uppercase text-[12px] inline-flex items-center gap-2"
+          style={{
+            background: 'var(--ink)',
+            color: 'var(--bg)',
+            padding: '14px 22px',
+            marginTop: 32,
+            letterSpacing: '.08em',
+            borderRadius: 0,
+          }}
+          onClick={() => navigate('/shop')}
+        >
+          {t('shop_now')} →
+        </button>
       </main>
     );
   }
@@ -144,18 +185,54 @@ export function Checkout() {
 
   return (
     <main className="page container-x" style={{ paddingBlock: 'clamp(30px, 4vw, 60px)' }}>
-      <button className="btn btn-ghost btn-sm" onClick={() => navigate('/shop')} style={{ marginBottom: 24 }}>
+      <button
+        className="font-mono uppercase text-[12px] inline-flex items-center gap-2"
+        style={{ marginBottom: 32, letterSpacing: '.08em', color: 'var(--ink-mute)' }}
+        onClick={() => navigate('/shop')}
+      >
         <Icon.ArrowLeft /> {t('back')}
       </button>
-      <h1 className="display" style={{ fontSize: 'var(--fs-h1)', marginBottom: 8 }}>{t('checkout')}</h1>
 
-      <div className="flex gap-3" style={{ marginBottom: 48 }}>
+      {/* LOCKUP HERO */}
+      <div className="font-mono uppercase text-ink-mute text-[11px]" style={{ letterSpacing: '.08em' }}>
+        {t('checkout')} — STEP {step} / 3
+      </div>
+      <h1
+        className="display"
+        style={{
+          fontSize: 'var(--fs-hero)',
+          fontWeight: 700,
+          letterSpacing: '-.04em',
+          lineHeight: 0.95,
+          color: 'var(--ink)',
+          marginTop: 18,
+          marginBottom: 8,
+        }}
+      >
+        {t('checkout')}
+      </h1>
+
+      {/* STEP MARKERS — hairline */}
+      <div className="grid border-t border-line" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginTop: 40, marginBottom: 48 }}>
         {[1, 2, 3].map((n) => (
-          <div key={n} className={`cstep ${step === n ? 'active' : ''} ${step > n ? 'done' : ''}`}>
-            <div className="bar" />
-            <div className="label">
-              <span>{lang === 'fa' ? ['۰۱', '۰۲', '۰۳'][n - 1] : `0${n}`}</span>
-              <span>{n === 1 ? t('step_details') : n === 2 ? t('step_payment') : t('step_review')}</span>
+          <div
+            key={n}
+            className="border-b"
+            style={{
+              padding: '16px 0',
+              borderBottomWidth: 1,
+              borderBottomStyle: 'solid',
+              borderBottomColor: step >= n ? 'var(--ink)' : 'var(--line)',
+            }}
+          >
+            <div
+              className="font-mono uppercase text-[11px]"
+              style={{
+                letterSpacing: '.08em',
+                color: step >= n ? 'var(--ink)' : 'var(--ink-mute)',
+              }}
+            >
+              {lang === 'fa' ? ['۰۱', '۰۲', '۰۳'][n - 1] : `0${n}`} · {n === 1 ? t('step_details') : n === 2 ? t('step_payment') : t('step_review')}
             </div>
           </div>
         ))}
@@ -165,22 +242,46 @@ export function Checkout() {
         <div>
           {step === 1 && (
             <Reveal>
-              <h2 className="font-display" style={{ fontSize: 28, marginBottom: 24 }}>{t('step_details')}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="field" style={{ gridColumn: '1/-1' }}>
-                  <label>{t('f_name')}</label>
-                  <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder={lang === 'fa' ? 'نام کامل' : 'Full name'} />
-                  {errors.name && <span className="err">{errors.name}</span>}
+              <h2
+                className="font-display"
+                style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 700, letterSpacing: '-.03em', marginBottom: 32 }}
+              >
+                {t('step_details')}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
+                <div className="flex flex-col gap-1.5" style={{ gridColumn: '1/-1' }}>
+                  <label className={labelCls} style={labelStyle}>{t('f_name')}</label>
+                  <input
+                    className={inputCls}
+                    style={inputStyle}
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    placeholder={lang === 'fa' ? 'نام کامل' : 'Full name'}
+                  />
+                  {errors.name && <span className="font-mono text-[11px]" style={{ color: 'var(--danger)' }}>{errors.name}</span>}
                 </div>
-                <div className="field">
-                  <label>{t('f_email')}</label>
-                  <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" />
-                  {errors.email && <span className="err">{errors.email}</span>}
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelCls} style={labelStyle}>{t('f_email')}</label>
+                  <input
+                    className={inputCls}
+                    style={inputStyle}
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="you@example.com"
+                  />
+                  {errors.email && <span className="font-mono text-[11px]" style={{ color: 'var(--danger)' }}>{errors.email}</span>}
                 </div>
-                <div className="field">
-                  <label>{t('f_phone')}</label>
-                  <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+1 555 123 4567" />
-                  {errors.phone && <span className="err">{errors.phone}</span>}
+                <div className="flex flex-col gap-1.5">
+                  <label className={labelCls} style={labelStyle}>{t('f_phone')}</label>
+                  <input
+                    className={inputCls}
+                    style={inputStyle}
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    placeholder="+1 555 123 4567"
+                  />
+                  {errors.phone && <span className="font-mono text-[11px]" style={{ color: 'var(--danger)' }}>{errors.phone}</span>}
                 </div>
               </div>
             </Reveal>
@@ -188,92 +289,146 @@ export function Checkout() {
 
           {step === 2 && (
             <Reveal>
-              <h2 className="font-display" style={{ fontSize: 28, marginBottom: 24 }}>{t('step_payment')}</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" style={{ marginBottom: 28 }}>
+              <h2
+                className="font-display"
+                style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 700, letterSpacing: '-.03em', marginBottom: 32 }}
+              >
+                {t('step_payment')}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 border-t border-line" style={{ marginBottom: 32 }}>
                 {payOptions.map((m) => (
                   <button
                     key={m.id}
-                    className={`pay-method ${form.pay === m.id ? 'active' : ''}`}
+                    className="text-start border-b border-line sm:[&:not(:last-child)]:border-e"
+                    style={{
+                      padding: '18px 16px',
+                      background: form.pay === m.id ? 'var(--bg-soft)' : 'transparent',
+                      color: form.pay === m.id ? 'var(--ink)' : 'var(--ink-soft)',
+                    }}
                     onClick={() => setForm({ ...form, pay: m.id })}
                   >
                     <div className="flex items-center gap-2.5">
                       {m.icon}
-                      <span className="pay-method-name">{m.name}</span>
+                      <span className="font-display" style={{ fontSize: 16, fontWeight: 600 }}>{m.name}</span>
                     </div>
-                    <span className="pay-method-desc">{m.desc}</span>
+                    <span className="font-mono text-[11px] text-ink-mute" style={{ marginTop: 8, letterSpacing: '.04em', display: 'block' }}>
+                      {m.desc}
+                    </span>
                   </button>
                 ))}
               </div>
 
               {form.pay === 'card' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="field" style={{ gridColumn: '1/-1' }}>
-                    <label>{t('f_card_num')}</label>
-                    <input value={form.cardNum} onChange={(e) => setForm({ ...form, cardNum: formatCard(e.target.value) })} placeholder="4242 4242 4242 4242" inputMode="numeric" />
-                    {errors.cardNum && <span className="err">{errors.cardNum}</span>}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
+                  <div className="flex flex-col gap-1.5" style={{ gridColumn: '1/-1' }}>
+                    <label className={labelCls} style={labelStyle}>{t('f_card_num')}</label>
+                    <input
+                      className={inputCls}
+                      style={inputStyle}
+                      value={form.cardNum}
+                      onChange={(e) => setForm({ ...form, cardNum: formatCard(e.target.value) })}
+                      placeholder="4242 4242 4242 4242"
+                      inputMode="numeric"
+                    />
+                    {errors.cardNum && <span className="font-mono text-[11px]" style={{ color: 'var(--danger)' }}>{errors.cardNum}</span>}
                   </div>
-                  <div className="field" style={{ gridColumn: '1/-1' }}>
-                    <label>{lang === 'fa' ? 'نام روی کارت' : 'Name on card'}</label>
-                    <input value={form.cardName} onChange={(e) => setForm({ ...form, cardName: e.target.value })} placeholder={form.name || (lang === 'fa' ? 'نام کامل' : 'Full name')} />
-                    {errors.cardName && <span className="err">{errors.cardName}</span>}
+                  <div className="flex flex-col gap-1.5" style={{ gridColumn: '1/-1' }}>
+                    <label className={labelCls} style={labelStyle}>
+                      {lang === 'fa' ? 'نام روی کارت' : 'Name on card'}
+                    </label>
+                    <input
+                      className={inputCls}
+                      style={inputStyle}
+                      value={form.cardName}
+                      onChange={(e) => setForm({ ...form, cardName: e.target.value })}
+                      placeholder={form.name || (lang === 'fa' ? 'نام کامل' : 'Full name')}
+                    />
+                    {errors.cardName && <span className="font-mono text-[11px]" style={{ color: 'var(--danger)' }}>{errors.cardName}</span>}
                   </div>
-                  <div className="field">
-                    <label>{t('f_exp')}</label>
-                    <input value={form.cardExp} onChange={(e) => setForm({ ...form, cardExp: formatExp(e.target.value) })} placeholder="12/27" inputMode="numeric" />
-                    {errors.cardExp && <span className="err">{errors.cardExp}</span>}
+                  <div className="flex flex-col gap-1.5">
+                    <label className={labelCls} style={labelStyle}>{t('f_exp')}</label>
+                    <input
+                      className={inputCls}
+                      style={inputStyle}
+                      value={form.cardExp}
+                      onChange={(e) => setForm({ ...form, cardExp: formatExp(e.target.value) })}
+                      placeholder="12/27"
+                      inputMode="numeric"
+                    />
+                    {errors.cardExp && <span className="font-mono text-[11px]" style={{ color: 'var(--danger)' }}>{errors.cardExp}</span>}
                   </div>
-                  <div className="field">
-                    <label>{t('f_cvc')}</label>
-                    <input value={form.cardCvc} onChange={(e) => setForm({ ...form, cardCvc: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="123" inputMode="numeric" />
-                    {errors.cardCvc && <span className="err">{errors.cardCvc}</span>}
+                  <div className="flex flex-col gap-1.5">
+                    <label className={labelCls} style={labelStyle}>{t('f_cvc')}</label>
+                    <input
+                      className={inputCls}
+                      style={inputStyle}
+                      value={form.cardCvc}
+                      onChange={(e) => setForm({ ...form, cardCvc: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                      placeholder="123"
+                      inputMode="numeric"
+                    />
+                    {errors.cardCvc && <span className="font-mono text-[11px]" style={{ color: 'var(--danger)' }}>{errors.cardCvc}</span>}
                   </div>
                 </div>
               )}
 
               {form.pay === 'wallet' && (
-                <div className="text-center border border-line bg-bg-card" style={{ padding: 32, borderRadius: 'var(--radius)' }}>
-                  <p className="text-ink-soft">{lang === 'fa' ? 'پس از تایید سفارش، به درگاه کیف پول هدایت می‌شوید.' : "You'll be redirected to your wallet provider after placing the order."}</p>
+                <div className="border-t border-b border-line" style={{ padding: '24px 0' }}>
+                  <p className="text-ink-soft">
+                    {lang === 'fa' ? 'پس از تایید سفارش، به درگاه کیف پول هدایت می‌شوید.' : "You'll be redirected to your wallet provider after placing the order."}
+                  </p>
                 </div>
               )}
 
               {form.pay === 'crypto' && (
-                <div className="text-center border border-line bg-bg-card" style={{ padding: 32, borderRadius: 'var(--radius)' }}>
-                  <p className="text-ink-soft">{lang === 'fa' ? 'پس از تایید سفارش، آدرس کیف پول و کد QR نمایش داده می‌شود.' : 'A QR code and wallet address will appear after placing the order.'}</p>
+                <div className="border-t border-b border-line" style={{ padding: '24px 0' }}>
+                  <p className="text-ink-soft">
+                    {lang === 'fa' ? 'پس از تایید سفارش، آدرس کیف پول و کد QR نمایش داده می‌شود.' : 'A QR code and wallet address will appear after placing the order.'}
+                  </p>
                 </div>
               )}
 
-              <div className="inline-flex items-center gap-2 text-ink-mute font-mono text-[12px]" style={{ marginTop: 24 }}>
-                <Icon.Shield /> {lang === 'fa' ? '256-bit رمزنگاری · PCI-DSS' : '256-bit encrypted · PCI-DSS L1'}
+              <div className="inline-flex items-center gap-2 text-ink-mute font-mono text-[11px]" style={{ marginTop: 28, letterSpacing: '.08em' }}>
+                <Icon.Shield /> {lang === 'fa' ? '256-bit رمزنگاری · PCI-DSS' : '256-BIT ENCRYPTED · PCI-DSS L1'}
               </div>
             </Reveal>
           )}
 
           {step === 3 && (
             <Reveal>
-              <h2 className="font-display" style={{ fontSize: 28, marginBottom: 24 }}>{t('step_review')}</h2>
-              <div className="border border-line bg-bg-card" style={{ padding: 24, borderRadius: 'var(--radius)', marginBottom: 20 }}>
-                <div className="eyebrow" style={{ marginBottom: 12 }}>{t('step_details')}</div>
+              <h2
+                className="font-display"
+                style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 700, letterSpacing: '-.03em', marginBottom: 32 }}
+              >
+                {t('step_review')}
+              </h2>
+              <div className="border-t border-line" style={{ padding: '20px 0' }}>
+                <div className={labelCls} style={{ ...labelStyle, marginBottom: 12 }}>{t('step_details')}</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[14px]">
                   <div><span className="text-ink-mute">{t('f_name')}: </span>{form.name}</div>
                   <div><span className="text-ink-mute">{t('f_email')}: </span>{form.email}</div>
                   <div><span className="text-ink-mute">{t('f_phone')}: </span>{form.phone}</div>
                 </div>
               </div>
-              <div className="border border-line bg-bg-card" style={{ padding: 24, borderRadius: 'var(--radius)', marginBottom: 20 }}>
-                <div className="eyebrow" style={{ marginBottom: 12 }}>{t('step_payment')}</div>
+              <div className="border-t border-line" style={{ padding: '20px 0' }}>
+                <div className={labelCls} style={{ ...labelStyle, marginBottom: 12 }}>{t('step_payment')}</div>
                 <div className="text-[14px]">
                   {form.pay === 'card' && <span>{t('pay_card')} •••• {form.cardNum.slice(-4)}</span>}
                   {form.pay === 'wallet' && <span>{t('pay_wallet')}</span>}
                   {form.pay === 'crypto' && <span>{t('pay_crypto')}</span>}
                 </div>
               </div>
-              <div className="border border-line bg-bg-card" style={{ padding: 24, borderRadius: 'var(--radius)' }}>
-                <div className="eyebrow" style={{ marginBottom: 12 }}>{t('cart')}</div>
+              <div className="border-t border-b border-line" style={{ padding: '20px 0' }}>
+                <div className={labelCls} style={{ ...labelStyle, marginBottom: 12 }}>{t('cart')}</div>
                 {cart.map((item) => {
                   const brand = BRANDS.find((b) => b.id === item.brandId);
                   if (!brand) return null;
                   return (
-                    <div key={item.id} className="flex justify-between text-[14px]" style={{ padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
+                    <div
+                      key={item.id}
+                      className="flex justify-between text-[14px]"
+                      style={{ padding: '10px 0', borderTop: '1px solid var(--line)' }}
+                    >
                       <span>{brand.name[lang] || brand.name.en} × {fmtNumber(item.qty)}</span>
                       <span className="font-mono">{fmtPrice(item.amount * item.qty)}</span>
                     </div>
@@ -283,12 +438,51 @@ export function Checkout() {
             </Reveal>
           )}
 
-          <div className="flex justify-between gap-3" style={{ marginTop: 40 }}>
-            {step > 1 ? <button className="btn btn-ghost" onClick={back}><Icon.ArrowLeft /> {t('back')}</button> : <span />}
+          <div className="flex justify-between gap-3" style={{ marginTop: 48 }}>
+            {step > 1 ? (
+              <button
+                className="font-mono uppercase text-[12px] inline-flex items-center gap-2"
+                style={{
+                  border: '1px solid var(--line-strong)',
+                  color: 'var(--ink)',
+                  padding: '14px 22px',
+                  letterSpacing: '.08em',
+                  borderRadius: 0,
+                  background: 'transparent',
+                }}
+                onClick={back}
+              >
+                <Icon.ArrowLeft /> {t('back')}
+              </button>
+            ) : <span />}
             {step < 3 ? (
-              <button className="btn btn-primary btn-lg" onClick={next}>{t('continue')} <Icon.Arrow /></button>
+              <button
+                className="font-mono uppercase text-[12px] inline-flex items-center gap-2"
+                style={{
+                  background: 'var(--ink)',
+                  color: 'var(--bg)',
+                  padding: '14px 22px',
+                  letterSpacing: '.08em',
+                  borderRadius: 0,
+                }}
+                onClick={next}
+              >
+                {t('continue')} →
+              </button>
             ) : (
-              <button className="btn btn-primary btn-lg" onClick={place} disabled={placing}>
+              <button
+                className="font-mono uppercase text-[12px] inline-flex items-center gap-2"
+                style={{
+                  background: 'var(--ink)',
+                  color: 'var(--bg)',
+                  padding: '14px 22px',
+                  letterSpacing: '.08em',
+                  borderRadius: 0,
+                  opacity: placing ? 0.6 : 1,
+                }}
+                onClick={place}
+                disabled={placing}
+              >
                 {placing ? (lang === 'fa' ? 'در حال پردازش…' : 'Processing…') : (
                   <>{t('pay_now')} · {fmtPrice(total)}</>
                 )}
@@ -298,36 +492,62 @@ export function Checkout() {
         </div>
 
         <aside>
-          <div className="sticky top-[100px] border border-line bg-bg-card" style={{ padding: 28, borderRadius: 'var(--radius-lg)' }}>
-            <div className="eyebrow" style={{ marginBottom: 18 }}>{lang === 'fa' ? 'خلاصه سفارش' : 'Order summary'}</div>
-            <div className="flex flex-col gap-3.5 overflow-y-auto" style={{ marginBottom: 18, maxHeight: 320 }}>
+          <div className="sticky top-[100px] border-t border-line" style={{ paddingTop: 24 }}>
+            <div className={labelCls} style={{ ...labelStyle, marginBottom: 24 }}>
+              {lang === 'fa' ? 'خلاصه سفارش' : 'Order summary'}
+            </div>
+            <div className="flex flex-col overflow-y-auto" style={{ marginBottom: 20, maxHeight: 320 }}>
               {cart.map((item) => {
                 const brand = BRANDS.find((b) => b.id === item.brandId);
                 if (!brand) return null;
                 return (
-                  <div key={item.id} className="grid items-center gap-3" style={{ gridTemplateColumns: '60px 1fr auto' }}>
+                  <div
+                    key={item.id}
+                    className="grid items-center gap-3 border-b border-line"
+                    style={{ gridTemplateColumns: '60px 1fr auto', padding: '14px 0' }}
+                  >
                     <div style={{ aspectRatio: '1.59/1' }}>
                       <GCard brand={brand} mini />
                     </div>
                     <div>
-                      <div className="font-display text-[14px]">{brand.name[lang] || brand.name.en}</div>
-                      <div className="font-mono text-ink-mute text-[11px]">{fmtPrice(item.amount)} × {fmtNumber(item.qty)}</div>
+                      <div className="font-display text-[14px]" style={{ fontWeight: 600 }}>
+                        {brand.name[lang] || brand.name.en}
+                      </div>
+                      <div className="font-mono text-ink-mute text-[11px]" style={{ letterSpacing: '.04em', marginTop: 2 }}>
+                        {fmtPrice(item.amount)} × {fmtNumber(item.qty)}
+                      </div>
                     </div>
                     <div className="font-mono text-[13px]">{fmtPrice(item.amount * item.qty)}</div>
                   </div>
                 );
               })}
             </div>
-            <div className="divider" style={{ marginBottom: 16 }} />
-            <div className="cart-total-row">
+            <div
+              className="flex justify-between"
+              style={{ padding: '10px 0', borderTop: '1px solid var(--line)' }}
+            >
               <span>{t('subtotal')}</span>
               <span className="font-mono">{fmtPrice(subtotal)}</span>
             </div>
-            <div className="cart-total-row">
+            <div
+              className="flex justify-between"
+              style={{ padding: '10px 0', borderTop: '1px solid var(--line)' }}
+            >
               <span>{t('fee')}</span>
               <span className="font-mono">{fmtPrice(fee)}</span>
             </div>
-            <div className="cart-total-row grand">
+            <div
+              className="flex justify-between font-display"
+              style={{
+                padding: '14px 0',
+                borderTop: '1px solid var(--ink)',
+                borderBottom: '1px solid var(--ink)',
+                fontSize: 18,
+                fontWeight: 700,
+                letterSpacing: '-.02em',
+                marginTop: 4,
+              }}
+            >
               <span>{t('total')}</span>
               <span className="font-mono">{fmtPrice(total)}</span>
             </div>

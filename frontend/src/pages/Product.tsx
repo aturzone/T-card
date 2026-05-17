@@ -33,7 +33,9 @@ export function Product() {
   if (!brand) {
     return (
       <main className="page container-x text-center" style={{ paddingBlock: 100 }}>
-        <h1 className="display" style={{ fontSize: 48 }}>{lang === 'fa' ? 'یافت نشد' : 'Not found'}</h1>
+        <h1 className="font-display" style={{ fontSize: 48, fontWeight: 700 }}>
+          {lang === 'fa' ? 'یافت نشد' : 'NOT FOUND'}
+        </h1>
         <button className="btn btn-primary" style={{ marginTop: 30 }} onClick={() => navigate('/shop')}>
           {t('back')}
         </button>
@@ -67,43 +69,84 @@ export function Product() {
   const relatedList = related.length >= 2 ? related : fallback;
 
   const catName = CATEGORIES.find((c) => c.id === brand.cat);
+  // TODO(i18n): page-name lockup uses the brand display name directly.
+  const brandLabel = brand.name[lang] || brand.name.en;
+  const brandIndex = BRANDS.findIndex((b) => b.id === brand.id) + 1;
 
   return (
     <main className="page">
       <section className="container-x" style={{ paddingBlock: 'clamp(30px, 4vw, 60px)' }}>
-        <div className="font-mono text-ink-mute text-[13px]" style={{ marginBottom: 32 }}>
-          <Link to="/" className="text-ink-mute">{lang === 'fa' ? 'خانه' : 'Home'}</Link>
+        <div
+          className="font-mono uppercase text-ink-mute"
+          style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 24 }}
+        >
+          <Link to="/" className="text-ink-mute">{lang === 'fa' ? 'خانه' : 'HOME'}</Link>
           <span style={{ margin: '0 8px' }}>/</span>
-          <Link to="/shop" className="text-ink-mute">{t('nav_shop')}</Link>
+          <Link to="/shop" className="text-ink-mute">{t('nav_shop').toUpperCase()}</Link>
           <span style={{ margin: '0 8px' }}>/</span>
-          <span style={{ color: 'var(--ink)' }}>{brand.name[lang] || brand.name.en}</span>
+          <span style={{ color: 'var(--ink)' }}>
+            {String(brandIndex).padStart(2, '0')} &mdash; {(catName ? catName[lang] : brand.cat).toUpperCase()}
+          </span>
         </div>
 
-        <div className="grid items-start gap-10 lg:gap-[80px] lg:[grid-template-columns:1.2fr_1fr]">
-          <div className="flex flex-col gap-5 sticky top-[100px]">
+        <h1
+          className="font-display"
+          style={{
+            fontSize: 'var(--fs-hero)',
+            fontWeight: 700,
+            letterSpacing: '-0.04em',
+            lineHeight: 0.95,
+            color: 'var(--ink)',
+            margin: 0,
+            textTransform: 'uppercase',
+          }}
+        >
+          {brandLabel}
+        </h1>
+        <p
+          className="product-tagline"
+          style={{
+            color: 'var(--ink-soft)',
+            fontSize: 18,
+            marginTop: 24,
+            maxWidth: '50ch',
+          }}
+        >
+          {brand.tagline[lang] || brand.tagline.en}
+        </p>
+      </section>
+
+      <section className="container-x" style={{ paddingBlock: 'clamp(20px, 3vw, 40px)' }}>
+        <div className="grid items-start gap-10 lg:gap-[80px] lg:[grid-template-columns:1.2fr_1fr] border-t border-line" style={{ paddingTop: 40 }}>
+          <div className="flex flex-col gap-5 lg:sticky lg:top-[100px]">
             <div className="product-card-stage">
               <GCard brand={brand} amount={finalAmount} />
             </div>
-            <div className="flex gap-4 justify-center mt-2 text-[12px] text-ink-mute">
-              <span className="inline-flex items-center gap-1.5"><Icon.Bolt /> {lang === 'fa' ? 'تحویل فوری' : 'Instant delivery'}</span>
-              <span className="inline-flex items-center gap-1.5"><Icon.Shield /> {lang === 'fa' ? 'بدون انقضا' : 'No expiry'}</span>
-              <span className="inline-flex items-center gap-1.5"><Icon.Gift /> {lang === 'fa' ? 'یادداشت رایگان' : 'Free note'}</span>
+            <div className="flex gap-4 justify-center mt-2 font-mono uppercase text-[11px] text-ink-mute" style={{ letterSpacing: '0.08em' }}>
+              <span className="inline-flex items-center gap-1.5"><Icon.Bolt /> {lang === 'fa' ? 'تحویل فوری' : 'INSTANT'}</span>
+              <span className="inline-flex items-center gap-1.5"><Icon.Shield /> {lang === 'fa' ? 'بدون انقضا' : 'NO EXPIRY'}</span>
+              <span className="inline-flex items-center gap-1.5"><Icon.Gift /> {lang === 'fa' ? 'یادداشت رایگان' : 'FREE NOTE'}</span>
             </div>
           </div>
 
           <div className="product-info">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="eyebrow">{catName ? catName[lang] : brand.cat}</span>
-              <span className="inline-flex items-center gap-1 text-[13px] text-ink-soft">
-                <Icon.Star style={{ color: 'var(--gold)' }} /> {brand.rating}
+            <div className="flex items-center gap-4 mb-3">
+              <span className="font-mono uppercase text-ink-mute text-[11px]" style={{ letterSpacing: '0.08em' }}>
+                {catName ? catName[lang] : brand.cat}
+              </span>
+              <span className="font-mono inline-flex items-center gap-1 text-[12px] text-ink-soft">
+                <Icon.Star style={{ color: 'var(--ink)' }} /> {brand.rating}
                 <span className="text-ink-mute">({fmtNumber(brand.reviews)})</span>
               </span>
             </div>
-            <h1 className="font-display leading-[1.02]">{brand.name[lang] || brand.name.en}</h1>
-            <p className="product-tagline" style={{ color: 'var(--ink-soft)', fontSize: 18, marginTop: 16, maxWidth: '50ch' }}>{brand.tagline[lang] || brand.tagline.en}</p>
 
-            <div style={{ marginTop: 40 }}>
-              <div className="eyebrow" style={{ marginBottom: 14 }}>{t('pdp_amount')}</div>
+            <div style={{ marginTop: 32 }}>
+              <div
+                className="font-mono uppercase text-ink-mute"
+                style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 14 }}
+              >
+                {t('pdp_amount')}
+              </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                 {brand.amounts.map((a) => (
                   <button
@@ -119,23 +162,45 @@ export function Product() {
                   placeholder={t('pdp_custom')}
                   value={customAmount}
                   onChange={(e) => setCustomAmount(e.target.value)}
-                  className="font-mono text-center outline-none border border-line-strong bg-bg-card text-[14px]"
-                  style={{ padding: '14px 8px', borderRadius: 'var(--radius)', minWidth: 0 }}
+                  className="font-mono text-center outline-none border-0 border-b border-line bg-transparent text-[14px] focus:border-ink"
+                  style={{ padding: '14px 8px', minWidth: 0 }}
                 />
               </div>
             </div>
 
             <div style={{ marginTop: 32 }}>
-              <div className="eyebrow" style={{ marginBottom: 14 }}>{t('pdp_qty')}</div>
-              <div className="inline-flex items-center border border-line-strong rounded-pill" style={{ padding: 4 }}>
-                <button className="icon-btn" style={{ width: 32, height: 32 }} onClick={() => setQty(Math.max(1, qty - 1))}>−</button>
+              <div
+                className="font-mono uppercase text-ink-mute"
+                style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 14 }}
+              >
+                {t('pdp_qty')}
+              </div>
+              <div className="inline-flex items-center border border-line" style={{ padding: 4 }}>
+                <button
+                  className="icon-btn font-mono"
+                  style={{ width: 32, height: 32 }}
+                  onClick={() => setQty(Math.max(1, qty - 1))}
+                >
+                  −
+                </button>
                 <span className="font-mono text-center" style={{ minWidth: 36 }}>{fmtNumber(qty)}</span>
-                <button className="icon-btn" style={{ width: 32, height: 32 }} onClick={() => setQty(qty + 1)}>+</button>
+                <button
+                  className="icon-btn font-mono"
+                  style={{ width: 32, height: 32 }}
+                  onClick={() => setQty(qty + 1)}
+                >
+                  +
+                </button>
               </div>
             </div>
 
             <div style={{ marginTop: 32 }}>
-              <div className="eyebrow" style={{ marginBottom: 14 }}>{t('pdp_for')}</div>
+              <div
+                className="font-mono uppercase text-ink-mute"
+                style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 14 }}
+              >
+                {t('pdp_for')}
+              </div>
               <div className="grid grid-cols-2 gap-2.5">
                 <button className={`amount-pill ${recipient === 'self' ? 'active' : ''}`} onClick={() => setRecipient('self')}>{t('pdp_self')}</button>
                 <button className={`amount-pill ${recipient === 'other' ? 'active' : ''}`} onClick={() => setRecipient('other')}>{t('pdp_someone')}</button>
@@ -164,7 +229,12 @@ export function Product() {
             </div>
 
             <div style={{ marginTop: 32 }}>
-              <div className="eyebrow" style={{ marginBottom: 14 }}>{t('pdp_delivery')}</div>
+              <div
+                className="font-mono uppercase text-ink-mute"
+                style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 14 }}
+              >
+                {t('pdp_delivery')}
+              </div>
               <div className="grid grid-cols-2 gap-2.5">
                 <button className={`amount-pill ${delivery === 'now' ? 'active' : ''}`} onClick={() => setDelivery('now')}>{t('pdp_now')}</button>
                 <button className={`amount-pill ${delivery === 'later' ? 'active' : ''}`} onClick={() => setDelivery('later')}>{t('pdp_later')}</button>
@@ -178,10 +248,18 @@ export function Product() {
             </div>
 
             <div className="flex gap-3 flex-wrap" style={{ marginTop: 40 }}>
-              <button className="btn btn-primary btn-lg" style={{ flex: '1 1 200px' }} onClick={handleBuyNow}>
+              <button
+                className="btn btn-primary btn-lg font-mono uppercase"
+                style={{ flex: '1 1 200px', letterSpacing: '0.06em' }}
+                onClick={handleBuyNow}
+              >
                 {t('pdp_buy_now')} · {fmtPrice(finalAmount * qty)}
               </button>
-              <button className="btn btn-ghost btn-lg" style={{ flex: '1 1 160px' }} onClick={handleAddToCart}>
+              <button
+                className="btn btn-ghost btn-lg font-mono uppercase"
+                style={{ flex: '1 1 160px', letterSpacing: '0.06em' }}
+                onClick={handleAddToCart}
+              >
                 {t('pdp_to_cart')}
               </button>
             </div>
@@ -204,7 +282,7 @@ export function Product() {
                 <div className="flex flex-col gap-5">
                   {TESTIMONIALS.map((tt, i) => (
                     <div key={i} style={{ paddingBlock: 12, borderBottom: '1px solid var(--line)' }}>
-                      <div className="flex gap-1 mb-1.5" style={{ color: 'var(--gold)' }}>
+                      <div className="flex gap-1 mb-1.5" style={{ color: 'var(--ink)' }}>
                         {Array.from({ length: 5 }).map((_, j) => <Icon.Star key={j} />)}
                       </div>
                       <p className="font-display text-ink" style={{ fontSize: 18, textWrap: 'pretty' as 'pretty' }}>"{tt.quote[lang]}"</p>
@@ -219,14 +297,29 @@ export function Product() {
       </section>
 
       <section className="container-x section-padding">
-        <div className="flex justify-between items-end gap-6 flex-wrap" style={{ marginBottom: 56 }}>
-          <h2 className="font-display" style={{ fontSize: 'var(--fs-h2)' }}>
-            {lang === 'fa' ? 'شاید بپسندید' : 'You may also like'}
+        <div
+          className="font-mono uppercase text-ink-mute"
+          style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 20 }}
+        >
+          {lang === 'fa' ? 'مرتبط' : 'RELATED'}
+        </div>
+        <div className="flex justify-between items-end gap-6 flex-wrap border-b border-line" style={{ marginBottom: 32, paddingBottom: 20 }}>
+          <h2
+            className="font-display"
+            style={{ fontSize: 'var(--fs-h2)', fontWeight: 700, letterSpacing: '-0.03em', margin: 0 }}
+          >
+            {lang === 'fa' ? 'شاید بپسندید' : 'YOU MAY ALSO LIKE'}
           </h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-8 md:gap-x-9 md:gap-y-11">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 border-t border-l border-line">
           {relatedList.map((b) => (
-            <ProductTile key={b.id} brand={b} onClick={() => navigate('/product/' + b.id)} />
+            <div
+              key={b.id}
+              className="border-r border-b border-line"
+              style={{ padding: 'clamp(12px, 2vw, 20px)' }}
+            >
+              <ProductTile brand={b} onClick={() => navigate('/product/' + b.id)} />
+            </div>
           ))}
         </div>
       </section>

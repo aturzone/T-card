@@ -20,19 +20,70 @@ export function Contact() {
     { lbl: lang === 'fa' ? 'دفتر' : 'Office', val: lang === 'fa' ? 'تهران، خیابان ولیعصر' : '21 Rivington St, NY 10002' },
   ];
 
+  // TODO(i18n): replace with t('hero_lockup_contact') once Agent F adds the key.
+  const lockup = 'CONTACT';
+
+  const inputCls =
+    'w-full border-0 border-b border-line focus:border-ink rounded-none bg-transparent font-mono text-[14px] outline-none transition-colors';
+  const inputStyle: React.CSSProperties = {
+    padding: '12px 0',
+  };
+
   return (
     <main className="page container-x" style={{ paddingBlock: 'clamp(60px, 9vw, 140px)' }}>
-      <div className="grid grid-cols-1 md:[grid-template-columns:1fr_1.2fr] gap-10 md:gap-[80px] items-start">
-        <div>
-          <div className="eyebrow">{lang === 'fa' ? 'تماس' : 'Contact'}</div>
-          <h1 className="display" style={{ fontSize: 'var(--fs-h1)', marginTop: 16, lineHeight: 1.05 }}>{t('contact_h')}</h1>
-          <p className="text-ink-soft" style={{ marginTop: 20, fontSize: 17, maxWidth: '38ch' }}>{t('contact_d')}</p>
+      <section style={{ marginBottom: 80 }}>
+        <div
+          className="font-mono uppercase text-ink-mute"
+          style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 24 }}
+        >
+          04 / 12 &mdash; {lang === 'fa' ? 'تماس' : 'CONTACT'} &mdash; {lang === 'fa' ? 'تهران' : 'TEHRAN'}
+        </div>
+        <h1
+          className="font-display"
+          style={{
+            fontSize: 'var(--fs-hero)',
+            fontWeight: 700,
+            letterSpacing: '-0.04em',
+            lineHeight: 0.95,
+            color: 'var(--ink)',
+            margin: 0,
+          }}
+        >
+          {lockup}
+        </h1>
+        <p
+          className="text-ink-soft"
+          style={{ fontSize: 18, marginTop: 24, maxWidth: '38ch' }}
+        >
+          {t('contact_d')}
+        </p>
+      </section>
 
-          <div className="flex flex-col gap-6" style={{ marginTop: 50 }}>
+      <div className="grid grid-cols-1 md:[grid-template-columns:1fr_1.2fr] gap-10 md:gap-[80px] items-start border-t border-line" style={{ paddingTop: 48 }}>
+        <div>
+          <h2
+            className="font-display"
+            style={{ fontSize: 'var(--fs-h2)', fontWeight: 700, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05 }}
+          >
+            {t('contact_h')}
+          </h2>
+
+          <div className="flex flex-col" style={{ marginTop: 48 }}>
             {info.map((x, i) => (
-              <div key={i}>
-                <div className="eyebrow" style={{ marginBottom: 4 }}>{x.lbl}</div>
-                <div className="font-display" style={{ fontSize: 22 }}>{x.val}</div>
+              <div
+                key={i}
+                className="border-t border-line"
+                style={{ paddingBlock: 20 }}
+              >
+                <div
+                  className="font-mono uppercase text-ink-mute"
+                  style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 6 }}
+                >
+                  {x.lbl}
+                </div>
+                <div className="font-display" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>
+                  {x.val}
+                </div>
               </div>
             ))}
           </div>
@@ -40,29 +91,95 @@ export function Contact() {
 
         <form
           onSubmit={submit}
-          className="flex flex-col gap-[18px] bg-bg-card border border-line"
-          style={{ padding: 'clamp(28px, 4vw, 48px)', borderRadius: 'var(--radius-lg)' }}
+          className="flex flex-col gap-6"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="field">
-              <label>{t('f_name')}</label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            </div>
-            <div className="field">
-              <label>{t('f_email')}</label>
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <label className="flex flex-col gap-2">
+              <span
+                className="font-mono uppercase text-ink-mute"
+                style={{ fontSize: 11, letterSpacing: '0.08em' }}
+              >
+                {t('f_name')}
+              </span>
+              <input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                required
+                className={inputCls}
+                style={inputStyle}
+              />
+            </label>
+            <label className="flex flex-col gap-2">
+              <span
+                className="font-mono uppercase text-ink-mute"
+                style={{ fontSize: 11, letterSpacing: '0.08em' }}
+              >
+                {t('f_email')}
+              </span>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+                className={inputCls}
+                style={inputStyle}
+              />
+            </label>
           </div>
-          <div className="field">
-            <label>{lang === 'fa' ? 'موضوع' : 'Subject'}</label>
-            <input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required />
-          </div>
-          <div className="field">
-            <label>{lang === 'fa' ? 'پیام شما' : 'Message'}</label>
-            <textarea rows={6} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} required />
-          </div>
-          <button type="submit" className="btn btn-primary btn-lg" style={{ marginTop: 8 }}>
-            {sent ? (<><Icon.Check /> {lang === 'fa' ? 'ارسال شد' : 'Sent'}</>) : (<>{t('contact_send')} <Icon.Arrow /></>)}
+          <label className="flex flex-col gap-2">
+            <span
+              className="font-mono uppercase text-ink-mute"
+              style={{ fontSize: 11, letterSpacing: '0.08em' }}
+            >
+              {lang === 'fa' ? 'موضوع' : 'Subject'}
+            </span>
+            <input
+              value={form.subject}
+              onChange={(e) => setForm({ ...form, subject: e.target.value })}
+              required
+              className={inputCls}
+              style={inputStyle}
+            />
+          </label>
+          <label className="flex flex-col gap-2">
+            <span
+              className="font-mono uppercase text-ink-mute"
+              style={{ fontSize: 11, letterSpacing: '0.08em' }}
+            >
+              {lang === 'fa' ? 'پیام شما' : 'Message'}
+            </span>
+            <textarea
+              rows={6}
+              value={form.message}
+              onChange={(e) => setForm({ ...form, message: e.target.value })}
+              required
+              className={`${inputCls} resize-y`}
+              style={{ ...inputStyle, minHeight: 140 }}
+            />
+          </label>
+          <button
+            type="submit"
+            className="font-mono uppercase inline-flex items-center justify-center gap-2 self-start rounded-none"
+            style={{
+              background: 'var(--ink)',
+              color: 'var(--bg)',
+              padding: '16px 28px',
+              fontSize: 12,
+              letterSpacing: '0.1em',
+              marginTop: 8,
+              border: 0,
+              cursor: 'pointer',
+            }}
+          >
+            {sent ? (
+              <>
+                <Icon.Check /> {lang === 'fa' ? 'ارسال شد' : 'SENT'}
+              </>
+            ) : (
+              <>
+                {t('contact_send')} <Icon.Arrow />
+              </>
+            )}
           </button>
         </form>
       </div>
