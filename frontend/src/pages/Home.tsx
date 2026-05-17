@@ -80,13 +80,15 @@ type Lockup = {
 };
 
 function blockBasePos(pos: BlockPos): React.CSSProperties {
+  // Use PHYSICAL textAlign (left/right) instead of logical (start/end) so
+  // RTL Persian doesn't invert the read direction for fixed-side blocks.
   switch (pos) {
-    case 'tl': return { top: 16, left: 24 };
-    case 'tr': return { top: 16, right: 24, textAlign: 'end' };
-    case 'bl': return { bottom: 56, left: 24 };
-    case 'br': return { bottom: 56, right: 24, textAlign: 'end' };
-    case 'ml': return { top: '38%', left: 24 };
-    case 'mr': return { top: '38%', right: 24, textAlign: 'end' };
+    case 'tl': return { top: 16, left: 24, textAlign: 'left' };
+    case 'tr': return { top: 16, right: 24, textAlign: 'right' };
+    case 'bl': return { bottom: 56, left: 24, textAlign: 'left' };
+    case 'br': return { bottom: 56, right: 24, textAlign: 'right' };
+    case 'ml': return { top: '38%', left: 24, textAlign: 'left' };
+    case 'mr': return { top: '38%', right: 24, textAlign: 'right' };
   }
 }
 
@@ -121,8 +123,29 @@ export function Home() {
     };
   }, []);
 
+  // Pause everything tied to the hero once it scrolls off-screen. Without
+  // this, the bust Canvas keeps drawing at 60 fps and the pTick rAF keeps
+  // calling setState — both invisible work that makes the sections below
+  // feel laggy or even kill the tab on weaker GPUs.
+  const [heroInView, setHeroInView] = useState(true);
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) setHeroInView(e.isIntersecting);
+      },
+      // Margin keeps the hero "active" until it's a full viewport below the
+      // fold, so quick back-scrolls don't catch a paused Canvas.
+      { rootMargin: '50% 0px 50% 0px', threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   const [pTick, setPTick] = useState(0);
   useEffect(() => {
+    if (!heroInView) return; // freeze caption motion when hero is off-screen
     let raf = 0;
     const tick = () => {
       setPTick(scrollProgress());
@@ -130,12 +153,13 @@ export function Home() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [scrollProgress]);
+  }, [scrollProgress, heroInView]);
 
   const p = reduced ? 0 : pTick;
 
-  // Caption blocks scroll past the sticky bust. Ranges are tuned against the
-  // 14-frame monolithstudio.com capture in /ref-mono.
+  // Caption blocks scroll past the sticky bust. Ranges are sequenced so each
+  // block enters AFTER the previous exits — sidenote-brands now finishes
+  // before SHOP NOW begins to enter.
   const BLOCKS: CaptionBlock[] = [
     {
       id: 'tagline',
@@ -146,7 +170,7 @@ export function Home() {
         en: 'CONTEMPORARY GIFT CARDS — BASED IN TEHRAN',
         fa: 'کارت‌های هدیه معاصر — تهران',
       },
-      range: [0, 0, 0.10, 0.16],
+      range: [0, 0, 0.08, 0.13],
       wipe: 'ltr',
     },
     {
@@ -158,7 +182,7 @@ export function Home() {
         en: 'T-Card brings 80+ global brands’ gift cards to Iran with hand-drawn covers and 90-second delivery.',
         fa: 'تی‌کارت بیش از ۸۰ برند جهانی را با کارت‌های دست‌ساز و تحویل ۹۰ ثانیه‌ای به ایران می‌آورد.',
       },
-      range: [0.08, 0.16, 0.26, 0.32],
+      range: [0.10, 0.16, 0.24, 0.30],
       wipe: 'ltr',
     },
     {
@@ -170,7 +194,7 @@ export function Home() {
         en: 'Every card cover is hand-drawn by the studio. No stock art, no AI.',
         fa: 'طرح روی هر کارت دست‌ساز استودیو است. بدون عکس آماده، بدون هوش مصنوعی.',
       },
-      range: [0.24, 0.32, 0.42, 0.48],
+      range: [0.26, 0.32, 0.40, 0.46],
       wipe: 'rtl',
     },
     {
@@ -182,7 +206,7 @@ export function Home() {
         en: 'Make the friction of buying a foreign gift card disappear — from search to send in under two minutes.',
         fa: 'حذف اصطکاک خرید کارت‌های هدیه خارجی — از جستجو تا ارسال در کمتر از دو دقیقه.',
       },
-      range: [0.44, 0.52, 0.62, 0.68],
+      range: [0.42, 0.48, 0.56, 0.62],
       wipe: 'rtl',
     },
     {
@@ -194,25 +218,27 @@ export function Home() {
         en: 'Brands you know — Amazon, Steam, PlayStation, Netflix, and 80+ more.',
         fa: 'برندهای آشنا — آمازون، استیم، پلی‌استیشن، نتفلیکس و بیش از ۸۰ برند دیگر.',
       },
-      range: [0.62, 0.70, 0.82, 0.88],
+      // Closes at 0.74 so SHOP-NOW lockup can take over the screen clean.
+      range: [0.58, 0.64, 0.72, 0.78],
       wipe: 'ltr',
     },
   ];
 
-  // Two giant lockups bookend the hero scroll-jack (mirrors monolith's
-  // MONOLITH sash at start + MEET THE ARTISTS stack near the end).
+  // Two giant lockups bookend the hero scroll-jack. SHOP-NOW now starts
+  // AFTER sidenote-brands has fully exited (0.78 vs 0.66), so there's a
+  // clean handoff to the closing lockup.
   const LOCKUPS: Lockup[] = [
     {
       id: 'tcard',
       text: { en: 'TCARD', fa: 'تی‌کارت' },
       variant: 'sash',
-      range: [0, 0, 0.09, 0.16],
+      range: [0, 0, 0.08, 0.13],
     },
     {
       id: 'shop',
       text: { en: 'SHOP\nNOW', fa: 'خرید\nکارت' },
       variant: 'stack-left',
-      range: [0.66, 0.78, 0.98, 1.0],
+      range: [0.80, 0.86, 0.98, 1.0],
     },
   ];
 
@@ -235,7 +261,7 @@ export function Home() {
           <div className="absolute inset-0" style={{ zIndex: 0 }}>
             {show3D ? (
               <Suspense fallback={null}>
-                <Statue3D scrollProgress={scrollProgress} />
+                <Statue3D scrollProgress={scrollProgress} active={heroInView} />
               </Suspense>
             ) : null}
           </div>
@@ -245,6 +271,9 @@ export function Home() {
             const m = reduced && lk.id !== 'tcard' ? { op: 0, y: 0, wipe: 0 } :
                       reduced ? { op: 1, y: 0, wipe: 0 } : blockMotion(p, lk.range);
             const text = lk.text[lang];
+            // Persian display fonts ship wider glyphs — cap a bit smaller so
+            // the wordmark fits inside the viewport at every breakpoint.
+            const isFa = lang === 'fa';
             if (lk.variant === 'sash') {
               return (
                 <h1
@@ -252,12 +281,17 @@ export function Home() {
                   data-id={lk.id}
                   className="font-display absolute pointer-events-none"
                   style={{
-                    top: '14%',
+                    top: '12%',
                     left: '50%',
                     transform: `translate3d(-50%, ${m.y * 0.5}px, 0)`,
-                    fontSize: 'var(--fs-mega)',
+                    // Hard cap: text must always fit one line. 16vw at 1920 →
+                    // 307 px; 12vw cap → 230 px on FA. Letter-spacing slightly
+                    // looser so Latin glyphs don't crowd each other.
+                    fontSize: isFa
+                      ? 'clamp(64px, 12vw, 200px)'
+                      : 'clamp(72px, 16vw, 260px)',
                     fontWeight: 700,
-                    letterSpacing: '-0.05em',
+                    letterSpacing: isFa ? '0' : '-0.04em',
                     lineHeight: 0.85,
                     color: '#ffffff',
                     opacity: m.op,
@@ -265,6 +299,7 @@ export function Home() {
                     mixBlendMode: 'difference',
                     whiteSpace: 'nowrap',
                     margin: 0,
+                    maxWidth: 'calc(100vw - 48px)',
                     clipPath: wipeClip('ltr', m.wipe * 0.5),
                   }}
                 >
@@ -272,26 +307,31 @@ export function Home() {
                 </h1>
               );
             }
-            // stack-left
+            // stack-left: stacked words, must fit vertically inside sticky
+            // inner (height ≈ 100vh - 72px). Two lines × line-height 0.85
+            // → keep cap so 2 × cap × 0.85 < 60vh.
             return (
               <h2
                 key={lk.id}
                 data-id={lk.id}
                 className="font-display absolute pointer-events-none"
                 style={{
-                  top: '18%',
+                  top: '15%',
                   left: 32,
                   transform: `translate3d(0, ${m.y * 0.5}px, 0)`,
-                  fontSize: 'clamp(80px, 13vw, 200px)',
+                  fontSize: isFa
+                    ? 'clamp(52px, 9vw, 130px)'
+                    : 'clamp(64px, 11vw, 160px)',
                   fontWeight: 700,
-                  letterSpacing: '-0.05em',
-                  lineHeight: 0.85,
+                  letterSpacing: isFa ? '0' : '-0.04em',
+                  lineHeight: 0.9,
                   color: '#ffffff',
                   opacity: m.op,
                   zIndex: 2,
                   mixBlendMode: 'difference',
                   whiteSpace: 'pre',
                   margin: 0,
+                  maxWidth: 'calc(50vw - 48px)',
                   clipPath: wipeClip('ltr', m.wipe),
                 }}
               >

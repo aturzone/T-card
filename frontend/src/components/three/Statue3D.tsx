@@ -8,6 +8,13 @@ useGLTF.preload('/models/bust_smooth_draco.glb', true);
 
 export type Statue3DProps = {
   scrollProgress: () => number;
+  /**
+   * When false, the underlying WebGL render loop is paused (frameloop:
+   * "never"). Use this to stop the bust from drawing 60 fps off-screen
+   * — without that gate, scrolling past the hero stays expensive even
+   * though nothing is visible.
+   */
+  active?: boolean;
 };
 
 type BustProps = {
@@ -167,17 +174,23 @@ function Bust({ scrollProgress }: BustProps) {
   );
 }
 
-export default function Statue3D({ scrollProgress }: Statue3DProps) {
+export default function Statue3D({ scrollProgress, active = true }: Statue3DProps) {
   const prefersReduced =
     typeof window !== 'undefined' &&
     typeof window.matchMedia === 'function' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // 962 K-vert bust + Draco + physical materials are GPU-expensive every
+  // frame. When the hero is off-screen we drop frameloop to "never" so
+  // scrolling through the lower sections doesn't pay for invisible draws.
+  const frameloop: 'always' | 'never' = active && !prefersReduced ? 'always' : 'never';
 
   return (
     <Canvas
       camera={{ position: [0, 0.1, 6.4], fov: 32 }}
       shadows
       dpr={[1, 2]}
+      frameloop={frameloop}
       aria-hidden="true"
     >
       <color attach="background" args={['#e0e0e0']} />
