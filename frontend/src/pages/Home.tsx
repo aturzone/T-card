@@ -281,27 +281,26 @@ export function Home() {
                   data-id={lk.id}
                   className="font-display absolute pointer-events-none"
                   style={{
-                    top: '12%',
+                    // Persian glyphs carry dots and diacritics above the
+                    // baseline. The sticky parent clips overflow, so we
+                    // push the wordmark down + give it loose line-height
+                    // on FA so the marks don't get sliced off.
+                    top: isFa ? '20%' : '12%',
                     left: '50%',
                     transform: `translate3d(-50%, ${m.y * 0.5}px, 0)`,
-                    // Hard cap: text must always fit one line. 16vw at 1920 →
-                    // 307 px; 12vw cap → 230 px on FA. Letter-spacing slightly
-                    // looser so Latin glyphs don't crowd each other.
                     fontSize: isFa
                       ? 'clamp(64px, 12vw, 200px)'
                       : 'clamp(72px, 16vw, 260px)',
                     fontWeight: 700,
                     letterSpacing: isFa ? '0' : '-0.04em',
-                    lineHeight: 0.85,
+                    lineHeight: isFa ? 1.25 : 0.85,
                     color: '#ffffff',
                     opacity: m.op,
                     zIndex: 2,
                     mixBlendMode: 'difference',
                     whiteSpace: 'nowrap',
                     margin: 0,
-                    // No maxWidth — let the wordmark size to its natural
-                    // content width. Persian glyphs render wider than Latin
-                    // and were being clipped at calc(100vw - 48px).
+                    padding: isFa ? '0.2em 0 0' : 0,
                     clipPath: wipeClip('ltr', m.wipe * 0.5),
                   }}
                 >
@@ -309,16 +308,15 @@ export function Home() {
                 </h1>
               );
             }
-            // stack-left: stacked words, must fit vertically inside sticky
-            // inner (height ≈ 100vh - 72px). Two lines × line-height 0.85
-            // → keep cap so 2 × cap × 0.85 < 60vh.
+            // stack-left: two-line stack. FA needs looser line-height +
+            // top inset for the dots/diacritics; LTR keeps the tight 0.9.
             return (
               <h2
                 key={lk.id}
                 data-id={lk.id}
                 className="font-display absolute pointer-events-none"
                 style={{
-                  top: '15%',
+                  top: isFa ? '20%' : '15%',
                   left: 32,
                   transform: `translate3d(0, ${m.y * 0.5}px, 0)`,
                   fontSize: isFa
@@ -326,15 +324,14 @@ export function Home() {
                     : 'clamp(64px, 11vw, 160px)',
                   fontWeight: 700,
                   letterSpacing: isFa ? '0' : '-0.04em',
-                  lineHeight: 0.9,
+                  lineHeight: isFa ? 1.25 : 0.9,
                   color: '#ffffff',
                   opacity: m.op,
                   zIndex: 2,
                   mixBlendMode: 'difference',
                   whiteSpace: 'pre',
                   margin: 0,
-                  // No maxWidth — Persian "خرید کارت" was clipping at
-                  // calc(50vw - 48px). Natural width via whiteSpace: pre.
+                  padding: isFa ? '0.2em 0 0' : 0,
                   clipPath: wipeClip('ltr', m.wipe),
                 }}
               >
