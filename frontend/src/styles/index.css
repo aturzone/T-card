@@ -1,9 +1,13 @@
-/* Fontsource — display + body + mono, only the weights we use */
+/* Fontsource — display + body + mono, only the weights we use.
+   Estedad covers Persian (RTL). All bundled — no CDN, no network at runtime. */
 @import "@fontsource/inter-tight/400.css";
 @import "@fontsource/inter-tight/700.css";
 @import "@fontsource/inter/400.css";
 @import "@fontsource/inter/500.css";
 @import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/estedad/400.css";
+@import "@fontsource/estedad/500.css";
+@import "@fontsource/estedad/700.css";
 
 @tailwind base;
 @tailwind components;

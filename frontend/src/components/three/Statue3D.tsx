@@ -247,7 +247,10 @@ export default function Statue3D({ scrollProgress, active = true }: Statue3DProp
           far={2.6}
           resolution={1024}
         />
-        <Environment preset="studio" environmentIntensity={0.35} />
+        {/* Self-hosted studio HDR — same file drei's preset="studio" pulls
+            from raw.githack.com, but bundled in /public/hdri/ so the page
+            renders offline with no third-party fetch. */}
+        <Environment files="/hdri/studio_small_03_1k.hdr" environmentIntensity={0.35} />
       </Suspense>
     </Canvas>
   );
