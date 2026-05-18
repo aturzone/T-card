@@ -196,8 +196,14 @@ export default function Statue3D({ scrollProgress, active = true }: Statue3DProp
     <Canvas
       camera={{ position: [0, 0.1, 6.4], fov: 32 }}
       shadows
-      dpr={[1, 2]}
+      // Cap dpr at 1.5x instead of 2x. On a 4K-retina display the bust
+      // doesn't visibly lose detail but the GPU pixel-fill drops by ~44 %.
+      // Critical for tabs on integrated graphics not OOMing the GPU.
+      dpr={[1, 1.5]}
       frameloop={frameloop}
+      // Request the discrete GPU on hybrid systems; disable alpha so the
+      // composite doesn't have to read back a transparent canvas.
+      gl={{ powerPreference: 'high-performance', antialias: true, alpha: false, stencil: false }}
       aria-hidden="true"
     >
       <color attach="background" args={['#e0e0e0']} />
