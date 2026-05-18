@@ -4,7 +4,7 @@ import type { Brand } from '@/data/types';
 interface BrandMarkProps {
   brand: Brand;
   size: number;       // px
-  /** Background tint behind the glyph. */
+  /** Background tint behind the glyph. Ignored in monolith mode (no container fill). */
   bg?: string;
   /** Color of the glyph. */
   color?: string;
@@ -13,11 +13,13 @@ interface BrandMarkProps {
 /**
  * Renders the brand's real Simple Icons glyph when available, otherwise the
  * `initial` letter monogram. Used inside the gift card art.
+ *
+ * Monolith redesign: no rounded container, no background fill. Icon renders
+ * at its natural size in a transparent square frame.
  */
-export function BrandMark({ brand, size, bg, color }: BrandMarkProps) {
+export function BrandMark({ brand, size, color }: BrandMarkProps) {
   const ic = brandIcon(brand.id);
-  const background = bg ?? brand.palette.accent;
-  const fg = color ?? brand.palette.b;
+  const fg = color ?? brand.palette.accent;
 
   if (ic) {
     return (
@@ -26,30 +28,39 @@ export function BrandMark({ brand, size, bg, color }: BrandMarkProps) {
         style={{
           width: size,
           height: size,
-          background,
+          background: 'transparent',
           color: fg,
-          borderRadius: size * 0.27,
+          borderRadius: 0,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
         aria-label={brand.name.en}
       >
-        <svg viewBox={ic.viewBox} width={size * 0.62} height={size * 0.62} fill="currentColor" aria-hidden="true">
+        <svg viewBox={ic.viewBox} width={size} height={size} fill="currentColor" aria-hidden="true">
           <path d={ic.path} />
         </svg>
       </span>
     );
   }
 
-  // Fallback to letter monogram
+  // Fallback to letter monogram — display sans, uppercase, weight 700, no container.
   return (
     <span
-      className="logo-mark italic"
+      className="logo-mark font-display"
       style={{
         width: size,
         height: size,
-        background,
+        background: 'transparent',
         color: fg,
-        fontSize: size * 0.6,
-        borderRadius: size * 0.27,
+        fontSize: size,
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        borderRadius: 0,
+        lineHeight: 1,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       {brand.initial}

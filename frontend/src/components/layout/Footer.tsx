@@ -1,19 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { Logo } from '@/components/ui/Logo';
 
 export function Footer() {
   const { lang, t } = useApp();
+  const lockup = lang === 'fa' ? 'تی‌کارت' : 'TCARD';
   return (
-    <footer className="footer">
+    <footer className="footer border-t border-line">
       <div className="container-x">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:[grid-template-columns:1.5fr_repeat(3,1fr)] gap-10 md:gap-[60px] mb-[60px]">
-          <div>
-            <Logo size={28} />
-            <p style={{ marginTop: 16, color: 'var(--ink-soft)', fontSize: 14, maxWidth: '32ch', lineHeight: 1.6 }}>
-              {t('ft_tagline')}
-            </p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 md:gap-[60px] py-[60px] font-mono text-[12px] uppercase" style={{ letterSpacing: '0.08em' }}>
           <div>
             <h4>{t('ft_company')}</h4>
             <ul>
@@ -39,7 +33,26 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        <div className="flex justify-between flex-wrap gap-3 pt-[30px] border-t border-line font-mono text-[12px] text-ink-mute">
+
+        <div
+          className="font-display select-none"
+          aria-hidden="true"
+          style={{
+            fontSize: 'clamp(96px, 18vw, 240px)',
+            fontWeight: 700,
+            lineHeight: 0.85,
+            letterSpacing: '-0.04em',
+            color: 'var(--ink)',
+            opacity: 0.92,
+            borderTop: '1px solid var(--line)',
+            paddingTop: 40,
+            marginTop: 20,
+          }}
+        >
+          {lockup}
+        </div>
+
+        <div className="flex justify-between flex-wrap gap-3 pt-[30px] pb-[30px] border-t border-line font-mono text-[12px] text-ink-mute uppercase" style={{ letterSpacing: '0.08em' }}>
           <span>{t('ft_rights')}</span>
           <span>{lang === 'fa' ? 'ساخته شده در شهر' : 'Made in the city.'}</span>
         </div>

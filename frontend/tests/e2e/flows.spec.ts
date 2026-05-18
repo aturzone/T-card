@@ -8,13 +8,6 @@ test('language toggle flips dir to rtl', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('data-lang', 'fa');
 });
 
-test('theme toggle flips data-theme', async ({ page }) => {
-  await page.goto('/');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.getByLabel('Toggle theme').click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-});
-
 test('add to cart → cart drawer → checkout flow', async ({ page }) => {
   await page.goto('/#/product/amazon');
   await page.getByRole('button', { name: /Add to cart/i }).click();

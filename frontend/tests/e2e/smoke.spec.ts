@@ -5,20 +5,21 @@ import { test, expect } from '@playwright/test';
  * errors. Mirrors tests/routes.test.tsx but in a real browser.
  */
 const ROUTES: Array<[string, RegExp]> = [
-  ['#/',                      /Gift cards, beautifully delivered/i],
-  ['#/shop',                  /All gift cards/i],
-  ['#/shop?cat=gaming',       /All gift cards/i],
+  // Home hero is Wave 3 — until then either the new TCARD lockup or legacy copy is fine.
+  ['#/',                      /TCARD|Gift cards, beautifully delivered/i],
+  ['#/shop',                  /BRANDS/],
+  ['#/shop?cat=gaming',       /BRANDS/],
   ['#/product/amazon',        /Amazon/i],
   ['#/product/does-not-exist',/Not found/i],
-  ['#/about',                 /About/i],
-  ['#/faq',                   /Questions, answered/i],
-  ['#/contact',               /Talk to us/i],
-  ['#/how',                   /Three steps/i],
-  ['#/account',               /Welcome back/i],
-  ['#/terms',                 /Terms of Service/i],
-  ['#/privacy',               /Privacy Policy/i],
-  ['#/cookies',               /Cookies/i],
-  ['#/zzz-not-real',          /Page not found/i],
+  ['#/about',                 /ABOUT/],
+  ['#/faq',                   /QUESTIONS/],
+  ['#/contact',               /CONTACT/],
+  ['#/how',                   /HOW IT WORKS/],
+  ['#/account',               /ACCOUNT/],
+  ['#/terms',                 /LEGAL|Terms of Service/],
+  ['#/privacy',               /LEGAL|Privacy Policy/],
+  ['#/cookies',               /LEGAL|Cookies/],
+  ['#/zzz-not-real',          /404/],
 ];
 
 for (const [hash, marker] of ROUTES) {

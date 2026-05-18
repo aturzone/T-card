@@ -3,7 +3,6 @@ import rtl from 'tailwindcss-rtl';
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
-  darkMode: ['class', '[data-theme="dark"]'],
   corePlugins: { preflight: false },
   theme: {
     screens: {
@@ -64,9 +63,9 @@ export default {
         'ease-out': 'var(--ease-out)',
       },
       transitionDuration: {
-        fast: '180ms',
-        DEFAULT: '320ms',
-        slow: '600ms',
+        fast: '120ms',
+        DEFAULT: '350ms',
+        slow: '700ms',
       },
       maxWidth: {
         container: '1400px',

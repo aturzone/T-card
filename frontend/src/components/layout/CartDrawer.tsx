@@ -86,10 +86,11 @@ export function CartDrawer() {
               <span style={{ fontFamily: 'var(--font-mono)' }}>{fmtPrice(total)}</span>
             </div>
             <button
-              className="btn btn-primary btn-block btn-lg"
+              className="btn btn-primary btn-block btn-lg font-mono uppercase"
+              style={{ letterSpacing: '0.08em', borderRadius: 0 }}
               onClick={() => { closeCart(); navigate('/checkout'); }}
             >
-              {t('checkout')} <Icon.Arrow />
+              {lang === 'fa' ? <>{t('checkout')} <Icon.Arrow /></> : <>CHECKOUT <Icon.Arrow /></>}
             </button>
           </div>
         )}

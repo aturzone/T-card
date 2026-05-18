@@ -8,7 +8,7 @@ import { BRANDS } from '@/data/brands';
 import { CATEGORIES } from '@/data/categories';
 
 export function Shop() {
-  const { lang, t } = useApp();
+  const { lang, t, fmtNumber } = useApp();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const initialCat = params.get('cat') || 'all';
@@ -36,35 +36,76 @@ export function Shop() {
     return list;
   }, [cat, sort, q]);
 
+  // TODO(i18n): replace with t('hero_lockup_shop') once Agent F adds the key.
+  const lockup = 'BRANDS';
+  const total = BRANDS.length;
+
   return (
     <main className="page">
-      <section className="container-x" style={{ paddingBlock: 'clamp(40px, 6vw, 80px) 40px' }}>
-        <div className="eyebrow">{t('nav_shop')}</div>
-        <h1 className="display" style={{ fontSize: 'var(--fs-h1)', marginTop: 14, maxWidth: '18ch' }}>{t('shop_h')}</h1>
-        <p style={{ color: 'var(--ink-soft)', marginTop: 16, maxWidth: '50ch', fontSize: 18 }}>{t('shop_d')}</p>
+      <section
+        className="container-x"
+        style={{ paddingBlock: 'clamp(40px, 6vw, 80px) 40px' }}
+      >
+        <div
+          className="font-mono uppercase text-ink-mute"
+          style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 24 }}
+        >
+          01 / 12 &mdash; {t('nav_shop').toUpperCase()} &mdash; {fmtNumber(total)} {lang === 'fa' ? 'برند' : 'TOTAL'}
+        </div>
+        <h1
+          className="font-display"
+          style={{
+            fontSize: 'var(--fs-hero)',
+            fontWeight: 700,
+            letterSpacing: '-0.04em',
+            lineHeight: 0.95,
+            color: 'var(--ink)',
+            margin: 0,
+          }}
+        >
+          {lockup}
+        </h1>
+        <p
+          style={{
+            color: 'var(--ink-soft)',
+            marginTop: 24,
+            maxWidth: '50ch',
+            fontSize: 18,
+          }}
+        >
+          {t('shop_d')}
+        </p>
       </section>
 
       <section className="container-x" style={{ paddingBottom: 32 }}>
-        <div className="flex gap-4 items-center flex-wrap" style={{ marginBottom: 24 }}>
+        <div
+          className="flex gap-4 items-center flex-wrap border-t border-b border-line"
+          style={{ marginBottom: 32, paddingBlock: 16 }}
+        >
           <div
-            className="flex items-center gap-2.5 border border-line-strong rounded-pill bg-bg-card"
-            style={{ padding: '10px 18px', flex: '1 1 280px', maxWidth: 380 }}
+            className="flex items-center gap-2.5"
+            style={{ flex: '1 1 280px', maxWidth: 380 }}
           >
             <Icon.Search />
             <input
               placeholder={t('search_ph')}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              className="flex-1 border-0 bg-transparent outline-none text-[14px]"
+              className="flex-1 border-0 bg-transparent outline-none text-[14px] font-mono"
             />
           </div>
           <div className="flex items-center gap-2.5 ms-auto">
-            <span className="font-mono uppercase text-ink-mute text-[12px]" style={{ letterSpacing: '.08em' }}>{t('sort_by')}</span>
+            <span
+              className="font-mono uppercase text-ink-mute text-[11px]"
+              style={{ letterSpacing: '0.08em' }}
+            >
+              {t('sort_by')}
+            </span>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as typeof sort)}
-              className="border border-line-strong rounded-pill bg-bg-card text-[13px] outline-none"
-              style={{ padding: '10px 14px' }}
+              className="border-0 border-b border-line bg-transparent font-mono uppercase text-[12px] outline-none focus:border-ink"
+              style={{ padding: '6px 4px', letterSpacing: '0.06em' }}
             >
               <option value="pop">{t('sort_pop')}</option>
               <option value="price-asc">{t('sort_price_a')}</option>
@@ -78,7 +119,7 @@ export function Shop() {
           {CATEGORIES.map((c) => (
             <button
               key={c.id}
-              className={`cat-chip ${cat === c.id ? 'active' : ''}`}
+              className={`cat-chip rounded-pill ${cat === c.id ? 'active' : ''}`}
               onClick={() => setCat(c.id)}
             >
               {c[lang]}
@@ -91,10 +132,18 @@ export function Shop() {
             <p className="font-display" style={{ fontSize: 28 }}>{t('no_results')}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-8 md:gap-x-9 md:gap-y-11">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 border-t border-l border-line">
             {filtered.map((b, i) => (
-              <Reveal key={b.id} delay={Math.min(i * 50, 300)}>
-                <ProductTile brand={b} onClick={() => navigate('/product/' + b.id)} />
+              <Reveal
+                key={b.id}
+                delay={Math.min(i * 50, 300)}
+              >
+                <div
+                  className="border-r border-b border-line h-full"
+                  style={{ padding: 'clamp(12px, 2vw, 20px)' }}
+                >
+                  <ProductTile brand={b} onClick={() => navigate('/product/' + b.id)} />
+                </div>
               </Reveal>
             ))}
           </div>

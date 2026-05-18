@@ -5,7 +5,6 @@ import { cleanup } from '@testing-library/react';
 // Reset DOM + localStorage between tests so each runs in a clean app state.
 beforeEach(() => {
   localStorage.clear();
-  document.documentElement.setAttribute('data-theme', 'light');
   document.documentElement.setAttribute('data-lang', 'en');
   document.documentElement.setAttribute('dir', 'ltr');
 });

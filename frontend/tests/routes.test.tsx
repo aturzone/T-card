@@ -26,21 +26,23 @@ function renderAt(path: string) {
 }
 
 const ROUTES: Array<{ path: string; expect: RegExp | string }> = [
-  { path: '/',                       expect: /Gift cards, beautifully delivered/i },
-  { path: '/shop',                   expect: /All gift cards/i },
-  { path: '/shop?cat=gaming',        expect: /All gift cards/i },
+  // Home hero lockup is Wave-3 — for now home still renders the existing tagline,
+  // so accept either the new TCARD lockup or the legacy tagline.
+  { path: '/',                       expect: /TCARD|Gift cards, beautifully delivered/i },
+  { path: '/shop',                   expect: /BRANDS/ },
+  { path: '/shop?cat=gaming',        expect: /BRANDS/ },
   { path: `/product/${BRANDS[0].id}`, expect: new RegExp(BRANDS[0].name.en, 'i') },
   { path: '/product/does-not-exist', expect: /Not found/i },
-  { path: '/checkout',               expect: /(Your cart is quiet|Checkout)/i },
-  { path: '/about',                  expect: /About/i },
-  { path: '/faq',                    expect: /Questions, answered/i },
-  { path: '/contact',                expect: /Talk to us/i },
-  { path: '/how',                    expect: /Three steps/i },
-  { path: '/account',                expect: /Welcome back/i },
-  { path: '/terms',                  expect: /Terms of Service/i },
-  { path: '/privacy',                expect: /Privacy Policy/i },
-  { path: '/cookies',                expect: /Cookies/i },
-  { path: '/nonexistent-route-xyz',  expect: /Page not found/i },
+  { path: '/checkout',               expect: /(Your cart is quiet|CHECKOUT)/ },
+  { path: '/about',                  expect: /ABOUT/ },
+  { path: '/faq',                    expect: /QUESTIONS/ },
+  { path: '/contact',                expect: /CONTACT/ },
+  { path: '/how',                    expect: /HOW IT WORKS/ },
+  { path: '/account',                expect: /ACCOUNT/ },
+  { path: '/terms',                  expect: /LEGAL|Terms of Service/ },
+  { path: '/privacy',                expect: /LEGAL|Privacy Policy/ },
+  { path: '/cookies',                expect: /LEGAL|Cookies/ },
+  { path: '/nonexistent-route-xyz',  expect: /404/ },
 ];
 
 describe('every route renders without crashing', () => {
