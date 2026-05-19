@@ -53,12 +53,13 @@ describe('every route renders without crashing', () => {
   });
 
   for (const { path, expect: marker } of ROUTES) {
-    test(`route ${path}`, () => {
+    test(`route ${path}`, async () => {
       const { container } = renderAt(path);
       // Page rendered at least *something*.
       expect(container.firstChild).not.toBeNull();
-      // Marker copy present in the page.
-      expect(screen.getAllByText(marker).length).toBeGreaterThan(0);
+      // Marker copy present in the page (lazy routes resolve via Suspense).
+      const hits = await screen.findAllByText(marker);
+      expect(hits.length).toBeGreaterThan(0);
     });
   }
 

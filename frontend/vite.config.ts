@@ -12,4 +12,14 @@ export default defineConfig({
   },
   server: { host: true, port: 5173 },
   preview: { host: true, port: 4173 },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three', '@react-three/fiber', '@react-three/drei'],
+          router: ['react-router-dom'],
+        },
+      },
+    },
+  },
 });

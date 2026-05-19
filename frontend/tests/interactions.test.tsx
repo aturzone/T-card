@@ -43,8 +43,8 @@ describe('cart + checkout flow', () => {
     const brand = BRANDS[0];
     bootAt(`/product/${brand.id}`);
 
-    // Add to cart
-    const addBtn = screen.getByRole('button', { name: /Add to cart/i });
+    // Add to cart (Product is lazy-loaded — wait for Suspense)
+    const addBtn = await screen.findByRole('button', { name: /Add to cart/i });
     fireEvent.click(addBtn);
 
     // Cart now has one entry
@@ -56,8 +56,9 @@ describe('cart + checkout flow', () => {
     });
   });
 
-  test('amount pill changes drive the gcard amount-anim key', () => {
+  test('amount pill changes drive the gcard amount-anim key', async () => {
     bootAt(`/product/${BRANDS[0].id}`);
+    await screen.findByRole('button', { name: /Add to cart/i });
     const pills = screen.getAllByRole('button').filter(
       (b) => /^\$\d+$/.test(b.textContent || ''),
     );
@@ -78,7 +79,8 @@ describe('cart + checkout flow', () => {
 describe('shop filters', () => {
   test('changing category filter rerenders without crash', async () => {
     bootAt('/shop');
-    expect(screen.getAllByText(/BRANDS/).length).toBeGreaterThan(0);
+    const hits = await screen.findAllByText(/BRANDS/);
+    expect(hits.length).toBeGreaterThan(0);
     // Click first non-"all" category chip
     const chip = screen.getByRole('button', { name: 'Gaming' });
     fireEvent.click(chip);
@@ -88,17 +90,19 @@ describe('shop filters', () => {
 
   test('search input narrows tile list', async () => {
     bootAt('/shop');
-    const input = screen.getByPlaceholderText(/Search brands/i) as HTMLInputElement;
+    const input = (await screen.findByPlaceholderText(/Search brands/i)) as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Steam' } });
     expect(input.value).toBe('Steam');
   });
 });
 
 describe('FAQ accordion', () => {
-  test('clicking a FAQ row toggles the open class', () => {
+  test('clicking a FAQ row toggles the open class', async () => {
     bootAt('/faq');
+    await waitFor(() => {
+      expect(document.querySelectorAll('.faq-item').length).toBeGreaterThan(0);
+    });
     const rows = document.querySelectorAll('.faq-item');
-    expect(rows.length).toBeGreaterThan(0);
     fireEvent.click(rows[1]);
     expect(rows[1].className).toContain('open');
   });

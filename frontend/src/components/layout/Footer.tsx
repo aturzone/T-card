@@ -38,7 +38,7 @@ export function Footer() {
           className="font-display select-none"
           aria-hidden="true"
           style={{
-            fontSize: 'clamp(96px, 18vw, 240px)',
+            fontSize: 'clamp(48px, 18vw, 240px)',
             fontWeight: 700,
             lineHeight: 0.85,
             letterSpacing: '-0.04em',
@@ -47,6 +47,8 @@ export function Footer() {
             borderTop: '1px solid var(--line)',
             paddingTop: 40,
             marginTop: 20,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap',
           }}
         >
           {lockup}

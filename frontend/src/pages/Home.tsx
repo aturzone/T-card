@@ -6,6 +6,7 @@ import { GCard } from '@/components/product/GCard';
 import { Icon } from '@/components/ui/Icon';
 import { ProductTile } from '@/components/product/ProductTile';
 import { useScrollProgress } from '@/hooks/useScrollProgress';
+import Statue3DStatic from '@/components/three/Statue3DStatic';
 import { BRANDS } from '@/data/brands';
 import { brandIcon } from '@/data/brand-icons';
 import { CATEGORIES } from '@/data/categories';
@@ -107,22 +108,11 @@ export function Home() {
   const scrollProgress = useScrollProgress(heroRef, 72);
   const time = useTehranClock(lang);
 
-  const [show3D, setShow3D] = useState(false);
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mqDesktop = window.matchMedia('(min-width: 768px)');
-    const mqReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setShow3D(mqDesktop.matches);
-    setReduced(mqReduced.matches);
-    const onDesktop = (e: MediaQueryListEvent) => setShow3D(e.matches);
-    const onReduced = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mqDesktop.addEventListener('change', onDesktop);
-    mqReduced.addEventListener('change', onReduced);
-    return () => {
-      mqDesktop.removeEventListener('change', onDesktop);
-      mqReduced.removeEventListener('change', onReduced);
-    };
-  }, []);
+  // Show the 3D bust at EVERY viewport width — phones, tablets, desktops.
+  // The aspect-aware camera in Statue3D handles portrait phone aspects so
+  // the bust head stays visible without cropping. Same experience on every
+  // device — the user explicitly asked for desktop-equivalent on mobile.
+  const show3D = true;
 
   // Pause everything tied to the hero once it scrolls off-screen. Without
   // this, the bust Canvas keeps drawing at 60 fps and the pTick rAF keeps
@@ -156,7 +146,7 @@ export function Home() {
     return () => cancelAnimationFrame(raf);
   }, [scrollProgress, heroInView]);
 
-  const p = reduced ? 0 : pTick;
+  const p = pTick;
 
   // Caption blocks scroll past the sticky bust. Ranges are sequenced so each
   // block enters AFTER the previous exits — sidenote-brands now finishes
@@ -245,7 +235,7 @@ export function Home() {
 
   // Scroll-jack length. Tuned to give each block ~16–18% of scroll, which
   // matches the cadence of the monolith reference.
-  const heroHeight = show3D && !reduced ? '700vh' : '100vh';
+  const heroHeight = show3D ? '700vh' : '100vh';
 
   return (
     <main className="page">
@@ -258,10 +248,11 @@ export function Home() {
           className="hero-sticky sticky w-full overflow-hidden"
           style={{ top: 'var(--header-h, 72px)', height: 'calc(100vh - var(--header-h, 72px))' }}
         >
-          {/* L0 — Full-bleed bust canvas */}
+          {/* L0 — Full-bleed bust canvas. SVG silhouette renders as the
+              Suspense fallback while the GLB streams in. */}
           <div className="absolute inset-0" style={{ zIndex: 0 }}>
             {show3D ? (
-              <Suspense fallback={null}>
+              <Suspense fallback={<Statue3DStatic />}>
                 <Statue3D scrollProgress={scrollProgress} active={heroInView} />
               </Suspense>
             ) : null}
@@ -269,8 +260,7 @@ export function Home() {
 
           {/* L1 — Giant scroll-bound lockups */}
           {LOCKUPS.map((lk) => {
-            const m = reduced && lk.id !== 'tcard' ? { op: 0, y: 0, wipe: 0 } :
-                      reduced ? { op: 1, y: 0, wipe: 0 } : blockMotion(p, lk.range);
+            const m = blockMotion(p, lk.range);
             const text = lk.text[lang];
             // Persian display fonts ship wider glyphs — cap a bit smaller so
             // the wordmark fits inside the viewport at every breakpoint.
@@ -344,12 +334,14 @@ export function Home() {
           {/* L2 — Caption blocks with scroll-bound slide + wipe entrance */}
           <div className="container-x relative h-full" style={{ zIndex: 3 }}>
             {BLOCKS.map((b) => {
-              const m = reduced && b.id !== 'tagline' ? { op: 0, y: 0, wipe: 0 } :
-                        reduced ? { op: 1, y: 0, wipe: 0 } : blockMotion(p, b.range);
+              const m = blockMotion(p, b.range);
               const eb = b.eyebrow[lang];
               const body = b.body[lang];
               const base = blockBasePos(b.pos);
-              const maxW = b.kind === 'paragraph' ? '38ch' : b.kind === 'card' ? '36ch' : '34ch';
+              // Cap ch-based widths by viewport so narrow phones don't push
+              // captions off the hero's right edge.
+              const rawCh = b.kind === 'paragraph' ? '38ch' : b.kind === 'card' ? '36ch' : '34ch';
+              const maxW = `min(${rawCh}, calc(100vw - 48px))`;
 
               if (b.kind === 'card') {
                 return (
@@ -372,7 +364,7 @@ export function Home() {
                         color: 'var(--bg)',
                         padding: '14px 20px 18px',
                         borderRadius: 0,
-                        minWidth: 280,
+                        minWidth: 'min(280px, calc(100vw - 48px))',
                       }}
                     >
                       <div className="font-mono uppercase" style={{ fontSize: 12, letterSpacing: '.08em', paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,.18)', marginBottom: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -561,7 +553,7 @@ export function Home() {
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4" style={{ gap: 16 }}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4" style={{ gap: 16 }}>
             {(['amazon', 'google-play', 'steam', 'playstation', 'netflix', 'spotify', 'youtube-premium', 'razer-gold']
               .map((id) => BRANDS.find((b) => b.id === id))
               .filter((b): b is NonNullable<typeof b> => Boolean(b))
@@ -677,8 +669,8 @@ export function Home() {
           {[1, 2, 3].map((n) => (
             <Reveal key={n} delay={n * 100}>
               <li
-                className="grid items-start gap-6 md:gap-12 border-t border-line"
-                style={{ gridTemplateColumns: '80px 1fr', padding: '36px 0' }}
+                className="grid items-start gap-3 md:gap-12 border-t border-line grid-cols-[48px_1fr] md:grid-cols-[80px_1fr]"
+                style={{ padding: '36px 0' }}
               >
                 <div
                   className="font-mono text-ink-mute text-[12px]"
@@ -747,12 +739,11 @@ export function Home() {
       <section className="container-x section-padding">
         <Reveal>
           <div
-            className="grid items-center relative overflow-hidden gap-10 cta-card"
+            className="grid items-center relative overflow-hidden gap-10 cta-card grid-cols-1 md:grid-cols-[1.4fr_1fr]"
             style={{
               padding: 'clamp(50px, 8vw, 100px) clamp(30px, 6vw, 80px)',
               background: 'var(--ink)',
               color: 'var(--bg)',
-              gridTemplateColumns: '1.4fr 1fr',
             }}
           >
             <div>
@@ -786,7 +777,6 @@ export function Home() {
               </div>
             </div>
           </div>
-          <style>{`@media (max-width: 800px) { .cta-card { grid-template-columns: 1fr !important; } }`}</style>
         </Reveal>
       </section>
     </main>

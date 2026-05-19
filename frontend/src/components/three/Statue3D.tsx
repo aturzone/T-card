@@ -1,10 +1,25 @@
-import { Suspense, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useGLTF, Environment, ContactShadows } from '@react-three/drei';
+import { useGLTF, Environment } from '@react-three/drei';
 import * as THREE from 'three';
+import { PCFSoftShadowMap } from 'three';
+
+declare global {
+  interface Window {
+    __preSplash?: {
+      ready: () => void;
+      modelReady: () => void;
+      dismiss: () => void;
+    };
+  }
+}
 
 useGLTF.setDecoderPath('/draco/');
-useGLTF.preload('/models/bust_smooth_draco.glb', true);
+// NOTE: no `useGLTF.preload(...)` here on purpose. The inline JS in
+// index.html pre-fetches the GLB into THREE.Cache (see preloadAssets.ts).
+// Calling preload here would race that and trigger a second fetch in
+// Chromium. The Bust component below calls useGLTF(url) which hits the
+// pre-populated cache synchronously.
 
 export type Statue3DProps = {
   scrollProgress: () => number;
@@ -82,6 +97,26 @@ function Bust({ scrollProgress }: BustProps) {
     scene: THREE.Group;
   };
 
+  // Signal the pre-React splash that the model has finished parsing and
+  // the scene is about to render its first frame. Splash dismisses on
+  // this so the bust is visible the same frame the curtain fades.
+  useEffect(() => {
+    // Two RAFs guarantee one rendered frame with the bust in the scene
+    // before we tell the splash to fade.
+    let cancelled = false;
+    const r1 = requestAnimationFrame(() => {
+      if (cancelled) return;
+      const r2 = requestAnimationFrame(() => {
+        if (!cancelled) window.__preSplash?.modelReady?.();
+      });
+      return () => cancelAnimationFrame(r2);
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(r1);
+    };
+  }, []);
+
   const { cloned, normScale, cutBottom, bbox } = useMemo(() => {
     const c = scene.clone(true);
     c.rotation.set(STAND_UPRIGHT_X, 0, Math.PI / 2);
@@ -141,7 +176,7 @@ function Bust({ scrollProgress }: BustProps) {
   const pedestalBottomR = bbox.x * 0.26;
   const pedestalY = -bbox.y / 2 - pedestalH / 2;
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera, size }) => {
     if (!ref.current) return;
     const p = scrollProgress();
     const k = sample(p);
@@ -156,7 +191,15 @@ function Bust({ scrollProgress }: BustProps) {
     ref.current.position.set(k.posX, cutAnchorY + k.posY, 0);
     ref.current.scale.setScalar(normScale * k.scale);
 
-    camera.position.set(0, 0.2, k.camZ);
+    // Aspect-aware camera distance — gentle linear pullback at narrow
+    // aspects. Tuned so a portrait phone (aspect ~0.46) shows the bust
+    // at ~75% of desktop size, not ~50%. The bust is mostly vertical
+    // (head dominates) so a little side-crop is fine.
+    const aspect = size.height > 0 ? size.width / size.height : 1.6;
+    const aspectMult = aspect < 1.6
+      ? 1 + (1.6 - aspect) * 0.35
+      : 1;
+    camera.position.set(0, 0.2, k.camZ * aspectMult);
     camera.lookAt(0, 0.0, 0);
   });
 
@@ -182,20 +225,16 @@ function Bust({ scrollProgress }: BustProps) {
 }
 
 export default function Statue3D({ scrollProgress, active = true }: Statue3DProps) {
-  const prefersReduced =
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
   // 962 K-vert bust + Draco + physical materials are GPU-expensive every
   // frame. When the hero is off-screen we drop frameloop to "never" so
   // scrolling through the lower sections doesn't pay for invisible draws.
-  const frameloop: 'always' | 'never' = active && !prefersReduced ? 'always' : 'never';
+  const frameloop: 'always' | 'never' = active ? 'always' : 'never';
 
   return (
     <Canvas
       camera={{ position: [0, 0.1, 6.4], fov: 32 }}
-      shadows
+      shadows={{ type: PCFSoftShadowMap }}
+      style={{ width: '100%', height: '100%', display: 'block' }}
       // Cap dpr at 1.5x instead of 2x. On a 4K-retina display the bust
       // doesn't visibly lose detail but the GPU pixel-fill drops by ~44 %.
       // Critical for tabs on integrated graphics not OOMing the GPU.
@@ -208,55 +247,70 @@ export default function Statue3D({ scrollProgress, active = true }: Statue3DProp
     >
       <color attach="background" args={['#e0e0e0']} />
 
-      {/* Low ambient — let the directional key carve the form. The monolith
-          reference has clearly deep shadows on the recessed side of the bust. */}
-      <ambientLight intensity={0.28} color="#f0eee8" />
+      {/* Lower ambient — lets the directional key carve dramatic shadows
+          into the bust planes (deep recesses, sharp cheekbone falloff). */}
+      <ambientLight intensity={0.22} color="#f0eee8" />
 
-      {/* Strong, slightly warm key from upper-right. Casts the dramatic
-          shadows that define the marble. */}
+      {/* KEY — strong warm directional from upper-right. Casts the
+          self-shadows that define the bust silhouette. Tighter shadow
+          camera + 4096 map + soft PCF radius = cinematic falloff. */}
       <directionalLight
-        position={[5, 8, 3.5]}
-        intensity={3.4}
-        color="#fff7e6"
+        position={[4.5, 7.5, 3.2]}
+        intensity={3.8}
+        color="#fff5e0"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-bias={-0.0004}
-        shadow-camera-left={-3}
-        shadow-camera-right={3}
-        shadow-camera-top={3}
-        shadow-camera-bottom={-3}
-        shadow-camera-near={1}
-        shadow-camera-far={20}
+        shadow-mapSize-width={4096}
+        shadow-mapSize-height={4096}
+        shadow-bias={-0.00018}
+        shadow-normalBias={0.02}
+        shadow-radius={4}
+        shadow-camera-left={-2.2}
+        shadow-camera-right={2.2}
+        shadow-camera-top={2.4}
+        shadow-camera-bottom={-2.4}
+        shadow-camera-near={2}
+        shadow-camera-far={18}
       />
 
-      {/* Cool rim from upper-back-left so the silhouette edge picks up a
-          subtle blue cast (visible on the reference's left shoulder). */}
+      {/* FILL — soft warm from camera-side-low, lifts the dark recesses
+          without flattening the key shadow. No shadow casting. */}
       <directionalLight
-        position={[-6, 4, -3]}
-        intensity={0.9}
-        color="#b0bccc"
+        position={[-2, 2, 5]}
+        intensity={0.55}
+        color="#f4ecd8"
       />
 
-      {/* Very subtle fill from below-front so the chin/jaw isn't pitch black. */}
+      {/* RIM — cool back-light from upper-left-back, traces the
+          silhouette edge so the bust separates from the background. */}
+      <directionalLight
+        position={[-5, 5, -4]}
+        intensity={1.4}
+        color="#a8c2d6"
+      />
+
+      {/* TOP halo — small spotlight kissing the crown of the head from
+          directly above-back, gives the hair/scalp a subtle highlight. */}
+      <spotLight
+        position={[0.5, 9, -2]}
+        angle={0.55}
+        penumbra={0.7}
+        intensity={0.9}
+        color="#fff2dc"
+        distance={20}
+      />
+
+      {/* Hemisphere fill — sky/ground ambient bounce so the chin and
+          neck recesses don't go pitch black. */}
       <hemisphereLight
-        args={['#d8d4c8', '#3a3833', 0.35]}
+        args={['#d8d4c8', '#2a2825', 0.40]}
       />
 
       <Suspense fallback={null}>
-        <Bust scrollProgress={prefersReduced ? () => 0 : scrollProgress} />
-        <ContactShadows
-          position={[0, -1.95, 0]}
-          opacity={0.55}
-          scale={4}
-          blur={2.2}
-          far={2.6}
-          resolution={1024}
-        />
+        <Bust scrollProgress={scrollProgress} />
         {/* Self-hosted studio HDR — same file drei's preset="studio" pulls
             from raw.githack.com, but bundled in /public/hdri/ so the page
             renders offline with no third-party fetch. */}
-        <Environment files="/hdri/studio_small_03_1k.hdr" environmentIntensity={0.35} />
+        <Environment files="/hdri/studio_small_03_512.hdr" environmentIntensity={0.45} />
       </Suspense>
     </Canvas>
   );

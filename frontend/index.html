@@ -5,10 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>T-Card — Gift cards, beautifully delivered</title>
     <meta name="description" content="Premium digital gift cards for the world's best brands. Delivered in under 90 seconds." />
-    <!-- Self-hosted fonts only (no network at runtime). Latin via @fontsource
-         inter / inter-tight / jetbrains-mono, Persian via @fontsource/estedad,
-         all bundled in /assets/. See src/styles/index.css. -->
     <link rel="icon" href="/favicon.svg" />
+
+<!-- preload links removed — Chrome doesn't reliably dedupe them with
+     drei's later fetch() calls. We pre-fetch in inline JS below and
+     pump bytes directly into THREE.Cache so drei's loader gets a hit. -->
+
+    <!-- Rockstar GTA VI–style loading curtain. Pure black, outline TC mark
+         with a light traveling along the strokes, thin progress bar with
+         matching shimmer. Inlined so it paints in the first ~50ms. -->
+    <style>
+      .pre-splash {
+        position: fixed; inset: 0; z-index: 9999;
+        background: #000;
+        display: grid; place-items: center;
+        overflow: hidden;
+        opacity: 1;
+        transition: opacity 700ms cubic-bezier(0.7, 0, 0.3, 1);
+        will-change: opacity;
+      }
+      .pre-splash.fade-out { opacity: 0; pointer-events: none; }
+
+      .pre-splash-stack {
+        display: flex; flex-direction: column; align-items: center;
+        gap: clamp(20px, 3vw, 32px);
+      }
+
+      .pre-splash-mark {
+        width: clamp(140px, 24vw, 240px);
+        height: auto;
+        animation: pre-splash-in 800ms cubic-bezier(0.6, 0, 0.2, 1) both;
+        transform-origin: center;
+      }
+      @keyframes pre-splash-in {
+        from { opacity: 0; transform: scale(0.94); }
+        to   { opacity: 1; transform: scale(1); }
+      }
+
+      /* Base outline of the monogram — always faintly visible */
+      .pre-splash-mark .base {
+        stroke: rgba(255, 255, 255, 0.16);
+      }
+      /* Highlight path — same shape, but a 5%-of-path lit dash travels
+         around the perimeter, like Rockstar's R* light scan */
+      .pre-splash-mark .glow {
+        stroke: rgba(255, 255, 255, 0.95);
+        filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.55));
+        stroke-dasharray: 14 240;
+        stroke-dashoffset: 254;
+        animation: pre-splash-scan 3.4s cubic-bezier(0.4, 0, 0.2, 1) 900ms infinite;
+      }
+      @keyframes pre-splash-scan {
+        from { stroke-dashoffset: 254; }
+        to   { stroke-dashoffset: -14;  }
+      }
+
+      .pre-splash-pct {
+        display: block;
+        font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+        font-size: 11px;
+        letter-spacing: 0.32em;
+        color: rgba(255, 255, 255, 0.42);
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        opacity: 0;
+        animation: pre-splash-meta-in 700ms ease 500ms forwards;
+      }
+      @keyframes pre-splash-meta-in {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+    </style>
+
     <script>
       (function () {
         try {
@@ -22,6 +90,152 @@
     </script>
   </head>
   <body>
+    <!-- First-paint loading curtain. Two stacked SVG paths produce the
+         "light scanning the monogram" effect: a faint base outline plus a
+         bright dash that travels along the same path. -->
+    <div id="pre-splash" class="pre-splash" aria-hidden="true">
+      <div class="pre-splash-stack">
+        <svg class="pre-splash-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+          <!-- BASE outlines (always faintly visible) -->
+          <path class="base"
+                d="M 8 8 H 56 V 16 H 36 V 32 H 28 V 16 H 8 Z"
+                stroke-width="1.5" fill="none"
+                stroke-linejoin="round" pathLength="240" />
+          <path class="base"
+                d="M 40 38 A 11 11 0 1 0 40 58"
+                stroke-width="1.5" fill="none"
+                stroke-linecap="round" pathLength="240" />
+          <!-- GLOW (animated traveling light) -->
+          <path class="glow"
+                d="M 8 8 H 56 V 16 H 36 V 32 H 28 V 16 H 8 Z"
+                stroke-width="1.8" fill="none"
+                stroke-linejoin="round" pathLength="240" />
+          <path class="glow"
+                d="M 40 38 A 11 11 0 1 0 40 58"
+                stroke-width="1.8" fill="none"
+                stroke-linecap="round" pathLength="240" />
+        </svg>
+
+        <span id="pre-splash-pct" class="pre-splash-pct">00%</span>
+      </div>
+    </div>
+
+    <script>
+      // Splash lifecycle. Pure CSS visual; this script handles dismiss
+      // timing + progress bar updates.
+      //
+      // Dismiss policy: splash strictly waits for fonts + React shell +
+      // (on desktop) the 3D model mesh to actually mount. Only a 90s
+      // emergency safety ceiling exists. No silhouette ever shown.
+      //
+      // Progress bar uses an asymptotic synthetic curve since byte-level
+      // GLB tracking would dual-fetch with drei (different cache modes).
+      (function () {
+        try { localStorage.removeItem('tcard.slownet'); } catch (e) {}
+
+        var el = document.getElementById('pre-splash');
+        var pctEl = document.getElementById('pre-splash-pct');
+
+        // 3D bust renders on every device — pre-fetch unconditionally.
+        var wants3D = true;
+
+        // Pre-fetch hero assets into ArrayBuffers and publish them so
+        // preloadAssets.ts can pump them into THREE.Cache before drei's
+        // FileLoader runs. This is the ONLY way to truly dedupe with
+        // drei in Chromium (preload <link> tags do NOT dedupe reliably).
+        var store = (window.__preloadedAssets = window.__preloadedAssets || {});
+        function preFetch(url) {
+          var p = fetch(url, { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.arrayBuffer() : null; })
+            .then(function (buf) {
+              if (!buf) return null;
+              store[url] = buf;
+              if (window.__preloadedAssetsResolve) {
+                try { window.__preloadedAssetsResolve(url, buf); } catch (e) {}
+              }
+              return buf;
+            })
+            .catch(function () { return null; });
+          store[url] = p; // hold the in-flight promise too
+          return p;
+        }
+        if (wants3D) {
+          preFetch('/models/bust_smooth_draco.glb');
+          preFetch('/hdri/studio_small_03_512.hdr');
+        }
+
+        var minMs = 1400;
+        var safetyMs = 90000;   // emergency-only ceiling (90s) — under normal
+                                // conditions the splash MUST wait until the
+                                // 3D model finishes loading. No early dismiss.
+        var start = performance.now();
+        var dismissed = false;
+        var ready = { fonts: false, react: false, model: false };
+
+        function paintBar(p) {
+          if (p < 0) p = 0;
+          if (p > 1) p = 1;
+          if (pctEl) pctEl.textContent = (Math.round(p * 100)).toString().padStart(2, '0') + '%';
+        }
+
+        // Asymptotic progress curve — approaches ~95% over time without
+        // ever stalling. Tuned for an expected ~6s typical load; on slow
+        // networks the bar keeps creeping toward 95% smoothly instead of
+        // sitting at 92% for 20s like a step function would.
+        //   t=2s  → 27%
+        //   t=5s  → 53%
+        //   t=10s → 77%
+        //   t=20s → 91%
+        var rafId = 0;
+        function tick() {
+          if (dismissed) return;
+          var elapsed = performance.now() - start;
+          paintBar(0.95 * (1 - Math.exp(-elapsed / 6000)));
+          rafId = requestAnimationFrame(tick);
+        }
+        rafId = requestAnimationFrame(tick);
+
+        function dismiss() {
+          if (dismissed) return;
+          dismissed = true;
+          cancelAnimationFrame(rafId);
+          paintBar(1);
+          var elapsed = performance.now() - start;
+          var wait = Math.max(0, minMs - elapsed);
+          setTimeout(function () {
+            if (!el) return;
+            el.classList.add('fade-out');
+            setTimeout(function () {
+              if (el && el.parentNode) el.parentNode.removeChild(el);
+              el = null;
+            }, 750);
+          }, wait);
+        }
+
+        function maybeDismiss() {
+          // Splash waits for fonts + React shell + (on desktop) the 3D
+          // model mesh to actually mount. No silhouette fallback shown
+          // mid-load — user stays in the loading curtain until the bust
+          // is ready.
+          var modelOK = wants3D ? ready.model : true;
+          if (ready.fonts && ready.react && modelOK) dismiss();
+        }
+
+        // Fonts gate
+        (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+          .then(function () { ready.fonts = true; maybeDismiss(); });
+
+        // Emergency safety only — should never fire under normal use.
+        setTimeout(function () { if (!dismissed) dismiss(); }, safetyMs);
+
+        window.__preSplash = {
+          ready: function () { ready.react = true; maybeDismiss(); },
+          modelReady: function () { ready.model = true; maybeDismiss(); },
+          dismiss: dismiss,
+        };
+      })();
+    </script>
+
     <div id="app"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
