@@ -52,7 +52,7 @@
   --bg-elev: #f0f0f0;
   --ink: #010101;
   --ink-soft: #1a1a1a;
-  --ink-mute: #6e6e6e;
+  --ink-mute: #555555; /* WCAG AA on #f4ead5 cream: 5.9:1 (was 4.0:1 at #6e6e6e) */
   --line: rgba(1,1,1,.08);
   --line-strong: rgba(1,1,1,.18);
   --accent: #010101;
@@ -322,7 +322,7 @@ input, select, textarea { font: inherit; color: inherit; }
   }
   .gcard-inner {
     position: absolute; inset: 0;
-    padding: 22px;
+    padding: clamp(14px, 3vw, 22px);
     display: flex; flex-direction: column; justify-content: space-between;
     z-index: 2;
   }
@@ -428,6 +428,11 @@ input, select, textarea { font: inherit; color: inherit; }
   .cart-item { display: grid; grid-template-columns: 80px 1fr auto; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line); align-items: center; }
   .cart-item:last-child { border-bottom: 0; }
   .cart-item .mini-card { width: 80px; aspect-ratio: 1.59/1; border-radius: 0; }
+  @media (max-width: 360px) {
+    .cart-item { grid-template-columns: 60px 1fr auto; gap: 10px; }
+    .cart-item .mini-card { width: 60px; }
+    .cart-item-name { font-size: 16px; }
+  }
   .cart-item-name { @apply font-display; font-size: 18px; line-height: 1.2; }
   .cart-item-meta { @apply font-mono text-ink-mute; font-size: 12px; }
   .qty-btn {
@@ -602,8 +607,8 @@ input, select, textarea { font: inherit; color: inherit; }
 
   /* Mobile nav */
   .mobile-toggle { display: none; }
-  @media (max-width: 800px) {
-    .nav { display: none; position: fixed; top: 72px; left: 0; right: 0; bottom: 0; background: var(--bg); flex-direction: column; padding: 40px var(--pad-x); gap: 28px; align-items: flex-start; }
+  @media (max-width: 767px) {
+    .nav { display: none; position: fixed; top: 72px; left: 0; right: 0; bottom: 0; background: var(--bg); flex-direction: column; padding: 40px var(--pad-x); gap: 28px; align-items: flex-start; overflow-y: auto; }
     .nav.open { display: flex; }
     .nav a { font-size: 24px; font-family: var(--font-display); }
     .mobile-toggle { display: inline-flex; }
@@ -632,3 +637,6 @@ input, select, textarea { font: inherit; color: inherit; }
   padding-left: var(--pad-x);
   padding-right: var(--pad-x);
 }
+
+/* Splash CSS lives inline in index.html so it paints before any framework
+   loads. See <style> block in the page <head>. */

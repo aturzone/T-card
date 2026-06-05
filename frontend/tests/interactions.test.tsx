@@ -12,7 +12,11 @@ import { AppProvider } from '@/context/AppContext';
 import { App } from '@/App';
 import { BRANDS } from '@/data/brands';
 
-function bootAt(path: string) {
+function bootAt(path: string, lang: 'en' | 'fa' = 'en') {
+  // Most assertions below check English copy; default tests to en for
+  // stability. The language-toggle test explicitly passes 'fa' to verify
+  // the new default behavior.
+  localStorage.setItem('tcard.lang', JSON.stringify(lang));
   return render(
     <MemoryRouter initialEntries={[path]}>
       <AppProvider>
@@ -24,17 +28,26 @@ function bootAt(path: string) {
 
 describe('header controls', () => {
   test('language toggle switches html[data-lang] + dir', async () => {
-    bootAt('/');
-    expect(document.documentElement.getAttribute('data-lang')).toBe('en');
-    expect(document.documentElement.getAttribute('dir')).toBe('ltr');
-    await userEvent.click(screen.getByRole('button', { name: 'فا' }));
-    await waitFor(() => {
-      expect(document.documentElement.getAttribute('data-lang')).toBe('fa');
-      expect(document.documentElement.getAttribute('dir')).toBe('rtl');
-    });
+    // Clear localStorage so the app uses its real default (Persian).
+    localStorage.removeItem('tcard.lang');
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </MemoryRouter>,
+    );
+    // Default lang is Persian / rtl now.
+    expect(document.documentElement.getAttribute('data-lang')).toBe('fa');
+    expect(document.documentElement.getAttribute('dir')).toBe('rtl');
     await userEvent.click(screen.getByRole('button', { name: 'EN' }));
-    expect(document.documentElement.getAttribute('data-lang')).toBe('en');
-    expect(document.documentElement.getAttribute('dir')).toBe('ltr');
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute('data-lang')).toBe('en');
+      expect(document.documentElement.getAttribute('dir')).toBe('ltr');
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'فا' }));
+    expect(document.documentElement.getAttribute('data-lang')).toBe('fa');
+    expect(document.documentElement.getAttribute('dir')).toBe('rtl');
   });
 });
 
@@ -43,8 +56,8 @@ describe('cart + checkout flow', () => {
     const brand = BRANDS[0];
     bootAt(`/product/${brand.id}`);
 
-    // Add to cart
-    const addBtn = screen.getByRole('button', { name: /Add to cart/i });
+    // Add to cart (Product is lazy-loaded — wait for Suspense)
+    const addBtn = await screen.findByRole('button', { name: /Add to cart/i });
     fireEvent.click(addBtn);
 
     // Cart now has one entry
@@ -56,8 +69,9 @@ describe('cart + checkout flow', () => {
     });
   });
 
-  test('amount pill changes drive the gcard amount-anim key', () => {
+  test('amount pill changes drive the gcard amount-anim key', async () => {
     bootAt(`/product/${BRANDS[0].id}`);
+    await screen.findByRole('button', { name: /Add to cart/i });
     const pills = screen.getAllByRole('button').filter(
       (b) => /^\$\d+$/.test(b.textContent || ''),
     );
@@ -78,7 +92,8 @@ describe('cart + checkout flow', () => {
 describe('shop filters', () => {
   test('changing category filter rerenders without crash', async () => {
     bootAt('/shop');
-    expect(screen.getAllByText(/BRANDS/).length).toBeGreaterThan(0);
+    const hits = await screen.findAllByText(/BRANDS/);
+    expect(hits.length).toBeGreaterThan(0);
     // Click first non-"all" category chip
     const chip = screen.getByRole('button', { name: 'Gaming' });
     fireEvent.click(chip);
@@ -88,17 +103,19 @@ describe('shop filters', () => {
 
   test('search input narrows tile list', async () => {
     bootAt('/shop');
-    const input = screen.getByPlaceholderText(/Search brands/i) as HTMLInputElement;
+    const input = (await screen.findByPlaceholderText(/Search brands/i)) as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'Steam' } });
     expect(input.value).toBe('Steam');
   });
 });
 
 describe('FAQ accordion', () => {
-  test('clicking a FAQ row toggles the open class', () => {
+  test('clicking a FAQ row toggles the open class', async () => {
     bootAt('/faq');
+    await waitFor(() => {
+      expect(document.querySelectorAll('.faq-item').length).toBeGreaterThan(0);
+    });
     const rows = document.querySelectorAll('.faq-item');
-    expect(rows.length).toBeGreaterThan(0);
     fireEvent.click(rows[1]);
     expect(rows[1].className).toContain('open');
   });

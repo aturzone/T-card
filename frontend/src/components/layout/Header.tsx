@@ -38,7 +38,7 @@ export function Header() {
   return (
     <header className="header border-b border-line">
       <div className="container-x header-inner">
-        <Logo size={26} />
+        <Logo size="clamp(22px, 4vw, 28px)" />
         <nav
           className={`nav ${open ? 'open' : ''} font-mono uppercase`}
           style={{ fontSize: 11, letterSpacing: '0.08em', gap: 28 }}
