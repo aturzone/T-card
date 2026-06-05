@@ -16,6 +16,9 @@ import { App } from '@/App';
 import { BRANDS } from '@/data/brands';
 
 function renderAt(path: string) {
+  // Route markers below are English copy — force lang=en so the markers
+  // resolve regardless of the new default (Persian).
+  localStorage.setItem('tcard.lang', JSON.stringify('en'));
   return render(
     <MemoryRouter initialEntries={[path]}>
       <AppProvider>

@@ -5,8 +5,9 @@ import { cleanup } from '@testing-library/react';
 // Reset DOM + localStorage between tests so each runs in a clean app state.
 beforeEach(() => {
   localStorage.clear();
-  document.documentElement.setAttribute('data-lang', 'en');
-  document.documentElement.setAttribute('dir', 'ltr');
+  // Default lang is now Persian (rtl). Each test boots from this state.
+  document.documentElement.setAttribute('data-lang', 'fa');
+  document.documentElement.setAttribute('dir', 'rtl');
 });
 
 afterEach(() => {

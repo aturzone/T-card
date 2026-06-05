@@ -20,7 +20,10 @@ declare global {
   }
 }
 
-const MAX_WAIT_MS = 12000;
+// Short timeout — if the inline pre-fetch isn't ready in 4s, boot React
+// anyway (drei will fetch normally; one extra round-trip is cheaper than
+// blocking First Contentful Paint for 12s on slow networks).
+const MAX_WAIT_MS = 4000;
 
 export async function waitForPreloadedAssets(): Promise<void> {
   Cache.enabled = true;

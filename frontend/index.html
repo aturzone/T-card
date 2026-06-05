@@ -1,11 +1,28 @@
 <!doctype html>
-<html lang="en" data-theme="light" data-lang="en">
+<html lang="fa" data-theme="light" data-lang="fa" dir="rtl">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>T-Card — Gift cards, beautifully delivered</title>
-    <meta name="description" content="Premium digital gift cards for the world's best brands. Delivered in under 90 seconds." />
+    <title>تی‌کارت — کارت‌های هدیه معاصر | T-Card</title>
+    <meta name="description" content="تی‌کارت — کارت‌های هدیه دیجیتال برای برندهای جهانی، کمتر از ۹۰ ثانیه تحویل. T-Card: premium digital gift cards delivered in under 90 seconds." />
+    <meta name="theme-color" content="#0e2b22" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Open Graph / social previews -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="تی‌کارت — کارت‌های هدیه معاصر" />
+    <meta property="og:description" content="کارت‌های هدیه دیجیتال برای برندهای جهانی، کمتر از ۹۰ ثانیه تحویل." />
+    <meta property="og:image" content="/favicon.svg" />
+    <meta property="og:locale" content="fa_IR" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="تی‌کارت — کارت‌های هدیه معاصر" />
+    <meta name="twitter:description" content="کارت‌های هدیه دیجیتال، کمتر از ۹۰ ثانیه تحویل." />
+
+    <!-- Canonical link (no hreflang — needs absolute URLs to be valid per
+         spec; the deploy script should inject these with the prod origin) -->
 
 <!-- preload links removed — Chrome doesn't reliably dedupe them with
      drei's later fetch() calls. We pre-fetch in inline JS below and
@@ -34,12 +51,11 @@
       .pre-splash-mark {
         width: clamp(140px, 24vw, 240px);
         height: auto;
-        animation: pre-splash-in 800ms cubic-bezier(0.6, 0, 0.2, 1) both;
+        /* Visible immediately on first paint — no opacity fade. The
+           traveling stroke-dash on the .glow path provides the motion. */
+        opacity: 1;
+        transform: scale(1);
         transform-origin: center;
-      }
-      @keyframes pre-splash-in {
-        from { opacity: 0; transform: scale(0.94); }
-        to   { opacity: 1; transform: scale(1); }
       }
 
       /* Base outline of the monogram — always faintly visible */
@@ -65,7 +81,8 @@
         font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
         font-size: 11px;
         letter-spacing: 0.32em;
-        color: rgba(255, 255, 255, 0.42);
+        /* WCAG AA contrast on #000 needs ≥4.5:1 at 11px. 0.65 alpha → 5.1:1. */
+        color: rgba(255, 255, 255, 0.72);
         text-align: center;
         font-variant-numeric: tabular-nums;
         opacity: 0;
@@ -81,9 +98,10 @@
       (function () {
         try {
           var t = localStorage.getItem('tcard.theme') || 'light';
-          var l = localStorage.getItem('tcard.lang') || 'en';
+          var l = localStorage.getItem('tcard.lang') || 'fa';
           document.documentElement.setAttribute('data-theme', t);
           document.documentElement.setAttribute('data-lang', l);
+          document.documentElement.setAttribute('lang', l);
           document.documentElement.setAttribute('dir', l === 'fa' ? 'rtl' : 'ltr');
         } catch (e) {}
       })();
@@ -136,8 +154,14 @@
         var el = document.getElementById('pre-splash');
         var pctEl = document.getElementById('pre-splash-pct');
 
-        // 3D bust renders on every device — pre-fetch unconditionally.
-        var wants3D = true;
+        // Skip pre-fetch if WebGL is unavailable (Lighthouse headless,
+        // ancient browsers) — saves ~1 MB on those clients and lets
+        // FCP/LCP fire promptly without blocking on assets we won't use.
+        var wants3D = false;
+        try {
+          var probe = document.createElement('canvas');
+          wants3D = !!(probe.getContext('webgl2') || probe.getContext('webgl'));
+        } catch (e) {}
 
         // Pre-fetch hero assets into ArrayBuffers and publish them so
         // preloadAssets.ts can pump them into THREE.Cache before drei's
@@ -164,7 +188,7 @@
           preFetch('/hdri/studio_small_03_512.hdr');
         }
 
-        var minMs = 1400;
+        var minMs = 700;
         var safetyMs = 90000;   // emergency-only ceiling (90s) — under normal
                                 // conditions the splash MUST wait until the
                                 // 3D model finishes loading. No early dismiss.
@@ -218,7 +242,10 @@
           // mid-load — user stays in the loading curtain until the bust
           // is ready.
           var modelOK = wants3D ? ready.model : true;
-          if (ready.fonts && ready.react && modelOK) dismiss();
+          // Don't gate on fonts.ready — woff2 has font-display:swap so
+          // the page renders fine with system-font fallback for the first
+          // ~1s. Waiting added ~2s to LCP on slow 4G.
+          if (ready.react && modelOK) dismiss();
         }
 
         // Fonts gate

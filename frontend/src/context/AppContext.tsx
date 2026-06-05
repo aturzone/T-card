@@ -35,7 +35,7 @@ export function useApp(): AppContextValue {
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useLocalStorage<Lang>('tcard.lang', 'en');
+  const [lang, setLangState] = useLocalStorage<Lang>('tcard.lang', 'fa');
   const [cart, setCart] = useLocalStorage<CartItem[]>('tcard.cart', []);
   const [cartOpen, setCartOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; show: boolean }>({ msg: '', show: false });

@@ -12,7 +12,11 @@ import { AppProvider } from '@/context/AppContext';
 import { App } from '@/App';
 import { BRANDS } from '@/data/brands';
 
-function bootAt(path: string) {
+function bootAt(path: string, lang: 'en' | 'fa' = 'en') {
+  // Most assertions below check English copy; default tests to en for
+  // stability. The language-toggle test explicitly passes 'fa' to verify
+  // the new default behavior.
+  localStorage.setItem('tcard.lang', JSON.stringify(lang));
   return render(
     <MemoryRouter initialEntries={[path]}>
       <AppProvider>
@@ -24,17 +28,26 @@ function bootAt(path: string) {
 
 describe('header controls', () => {
   test('language toggle switches html[data-lang] + dir', async () => {
-    bootAt('/');
-    expect(document.documentElement.getAttribute('data-lang')).toBe('en');
-    expect(document.documentElement.getAttribute('dir')).toBe('ltr');
-    await userEvent.click(screen.getByRole('button', { name: 'فا' }));
-    await waitFor(() => {
-      expect(document.documentElement.getAttribute('data-lang')).toBe('fa');
-      expect(document.documentElement.getAttribute('dir')).toBe('rtl');
-    });
+    // Clear localStorage so the app uses its real default (Persian).
+    localStorage.removeItem('tcard.lang');
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppProvider>
+          <App />
+        </AppProvider>
+      </MemoryRouter>,
+    );
+    // Default lang is Persian / rtl now.
+    expect(document.documentElement.getAttribute('data-lang')).toBe('fa');
+    expect(document.documentElement.getAttribute('dir')).toBe('rtl');
     await userEvent.click(screen.getByRole('button', { name: 'EN' }));
-    expect(document.documentElement.getAttribute('data-lang')).toBe('en');
-    expect(document.documentElement.getAttribute('dir')).toBe('ltr');
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute('data-lang')).toBe('en');
+      expect(document.documentElement.getAttribute('dir')).toBe('ltr');
+    });
+    await userEvent.click(screen.getByRole('button', { name: 'فا' }));
+    expect(document.documentElement.getAttribute('data-lang')).toBe('fa');
+    expect(document.documentElement.getAttribute('dir')).toBe('rtl');
   });
 });
 

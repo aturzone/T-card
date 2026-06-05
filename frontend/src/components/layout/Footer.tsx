@@ -9,7 +9,7 @@ export function Footer() {
       <div className="container-x">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 md:gap-[60px] py-[60px] font-mono text-[12px] uppercase" style={{ letterSpacing: '0.08em' }}>
           <div>
-            <h4>{t('ft_company')}</h4>
+            <h3>{t('ft_company')}</h3>
             <ul>
               <li><Link to="/about">{t('nav_about')}</Link></li>
               <li><Link to="/how">{t('nav_how')}</Link></li>
@@ -17,7 +17,7 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4>{t('ft_support')}</h4>
+            <h3>{t('ft_support')}</h3>
             <ul>
               <li><Link to="/faq">{t('nav_faq')}</Link></li>
               <li><Link to="/contact">{lang === 'fa' ? 'پشتیبانی' : 'Help center'}</Link></li>
@@ -25,7 +25,7 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h4>{t('ft_legal')}</h4>
+            <h3>{t('ft_legal')}</h3>
             <ul>
               <li><Link to="/terms">{lang === 'fa' ? 'شرایط استفاده' : 'Terms'}</Link></li>
               <li><Link to="/privacy">{lang === 'fa' ? 'حریم خصوصی' : 'Privacy'}</Link></li>

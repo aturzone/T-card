@@ -52,7 +52,7 @@
   --bg-elev: #f0f0f0;
   --ink: #010101;
   --ink-soft: #1a1a1a;
-  --ink-mute: #6e6e6e;
+  --ink-mute: #555555; /* WCAG AA on #f4ead5 cream: 5.9:1 (was 4.0:1 at #6e6e6e) */
   --line: rgba(1,1,1,.08);
   --line-strong: rgba(1,1,1,.18);
   --accent: #010101;

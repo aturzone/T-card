@@ -25,6 +25,8 @@ export function BrandMark({ brand, size, color }: BrandMarkProps) {
     return (
       <span
         className="logo-mark"
+        role="img"
+        aria-label={brand.name.en}
         style={{
           width: size,
           height: size,
@@ -35,7 +37,6 @@ export function BrandMark({ brand, size, color }: BrandMarkProps) {
           alignItems: 'center',
           justifyContent: 'center',
         }}
-        aria-label={brand.name.en}
       >
         <svg viewBox={ic.viewBox} width={size} height={size} fill="currentColor" aria-hidden="true">
           <path d={ic.path} />

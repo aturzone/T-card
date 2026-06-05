@@ -7,6 +7,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ProductTile } from '@/components/product/ProductTile';
 import { useScrollProgress } from '@/hooks/useScrollProgress';
 import Statue3DStatic from '@/components/three/Statue3DStatic';
+import { useWebGLSupport } from '@/hooks/useWebGLSupport';
 import { BRANDS } from '@/data/brands';
 import { brandIcon } from '@/data/brand-icons';
 import { CATEGORIES } from '@/data/categories';
@@ -108,11 +109,18 @@ export function Home() {
   const scrollProgress = useScrollProgress(heroRef, 72);
   const time = useTehranClock(lang);
 
-  // Show the 3D bust at EVERY viewport width — phones, tablets, desktops.
-  // The aspect-aware camera in Statue3D handles portrait phone aspects so
-  // the bust head stays visible without cropping. Same experience on every
-  // device — the user explicitly asked for desktop-equivalent on mobile.
-  const show3D = true;
+  // Show the 3D bust on every viewport width — phones, tablets, desktops —
+  // BUT only mount the Canvas after we've confirmed WebGL is available.
+  // Lighthouse headless audits and ancient browsers fall through to the
+  // SVG silhouette silently (no console errors → Best Practices score 100).
+  const webglOK = useWebGLSupport();
+  const show3D = webglOK === true;
+  // When WebGL is unavailable (Lighthouse headless, very old browsers),
+  // there's no Bust to signal modelReady → tell the splash to dismiss so
+  // the page surfaces instead of waiting for a model that'll never load.
+  useEffect(() => {
+    if (webglOK === false) window.__preSplash?.modelReady?.();
+  }, [webglOK]);
 
   // Pause everything tied to the hero once it scrolls off-screen. Without
   // this, the bust Canvas keeps drawing at 60 fps and the pTick rAF keeps
@@ -235,7 +243,9 @@ export function Home() {
 
   // Scroll-jack length. Tuned to give each block ~16–18% of scroll, which
   // matches the cadence of the monolith reference.
-  const heroHeight = show3D ? '700vh' : '100vh';
+  // Scroll-jacked hero is always 700vh — the caption sequence runs even
+  // before WebGL is confirmed so the page layout doesn't jump.
+  const heroHeight = '700vh';
 
   return (
     <main className="page">
@@ -665,13 +675,14 @@ export function Home() {
             {t('how_h')}
           </h2>
         </div>
-        <ol className="flex flex-col" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        <ol className="flex flex-col" role="list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {[1, 2, 3].map((n) => (
-            <Reveal key={n} delay={n * 100}>
-              <li
-                className="grid items-start gap-3 md:gap-12 border-t border-line grid-cols-[48px_1fr] md:grid-cols-[80px_1fr]"
-                style={{ padding: '36px 0' }}
-              >
+            <li key={n} className="contents">
+              <Reveal delay={n * 100}>
+                <div
+                  className="grid items-start gap-3 md:gap-12 border-t border-line grid-cols-[48px_1fr] md:grid-cols-[80px_1fr]"
+                  style={{ padding: '36px 0' }}
+                >
                 <div
                   className="font-mono text-ink-mute text-[12px]"
                   style={{ letterSpacing: '.08em', paddingTop: 8 }}
@@ -689,10 +700,11 @@ export function Home() {
                     {t(`how_${n}_d` as I18NKey)}
                   </p>
                 </div>
-              </li>
-            </Reveal>
+                </div>
+              </Reveal>
+            </li>
           ))}
-          <li className="border-t border-line" style={{ listStyle: 'none' }} />
+          <li className="border-t border-line" style={{ listStyle: 'none' }} aria-hidden="true" />
         </ol>
       </section>
 

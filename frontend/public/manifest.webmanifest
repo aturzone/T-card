@@ -1,0 +1,21 @@
+{
+  "name": "T-Card — Gift cards",
+  "short_name": "T-Card",
+  "description": "کارت‌های هدیه معاصر — تهران. Premium digital gift cards delivered in under 90 seconds.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0e2b22",
+  "orientation": "portrait",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
