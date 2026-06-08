@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useApp } from '@/context/AppContext';
 import { Icon } from '@/components/ui/Icon';
+import { COMPANY } from '@/data/company';
 
 export function Contact() {
   const { lang, t } = useApp();
@@ -14,10 +15,10 @@ export function Contact() {
     setForm({ name: '', email: '', subject: '', message: '' });
   };
 
-  const info = [
-    { lbl: lang === 'fa' ? 'ایمیل' : 'Email', val: 'hello@t-card.co' },
-    { lbl: lang === 'fa' ? 'تلفن' : 'Phone', val: '+1 (555) 240-9134' },
-    { lbl: lang === 'fa' ? 'دفتر' : 'Office', val: lang === 'fa' ? 'تهران، خیابان ولیعصر' : '21 Rivington St, NY 10002' },
+  const info: { lbl: string; val: string; dir?: 'ltr' }[] = [
+    { lbl: t('f_email'), val: COMPANY.email, dir: 'ltr' },
+    { lbl: t('f_phone'), val: t('info_phone'), dir: 'ltr' },
+    { lbl: t('f_address'), val: t('info_address') },
   ];
 
   // TODO(i18n): replace with t('hero_lockup_contact') once Agent F adds the key.
@@ -36,7 +37,7 @@ export function Contact() {
           className="font-mono uppercase text-ink-mute"
           style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 24 }}
         >
-          04 / 12 &mdash; {lang === 'fa' ? 'تماس' : 'CONTACT'} &mdash; {lang === 'fa' ? 'تهران' : 'TEHRAN'}
+          04 / 12 &mdash; {lang === 'fa' ? 'تماس' : 'CONTACT'} &mdash; {lang === 'fa' ? 'مشهد' : 'MASHHAD'}
         </div>
         <h1
           className="font-display"
@@ -82,7 +83,7 @@ export function Contact() {
                   {x.lbl}
                 </div>
                 <div className="font-display" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>
-                  {x.val}
+                  <span dir={x.dir}>{x.val}</span>
                 </div>
               </div>
             ))}

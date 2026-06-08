@@ -12,7 +12,7 @@ export function Header() {
   const [open, setOpen] = useState(false);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
 
-  // Live Tehran clock — updates every second
+  // Live Iran clock — updates every second
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -24,7 +24,7 @@ export function Header() {
     minute: '2-digit',
     hour12: false,
   }).format(now);
-  const cityLabel = lang === 'fa' ? 'تهران' : 'TEHRAN';
+  const cityLabel = lang === 'fa' ? 'مشهد' : 'MASHHAD';
 
   const navItems = [
     { id: 'shop',    to: '/shop',    label: translate('nav_shop', lang) },
@@ -59,7 +59,7 @@ export function Header() {
           <div
             className="hidden md:block font-mono uppercase text-ink-mute"
             style={{ fontSize: 11, letterSpacing: '0.08em' }}
-            aria-label="Tehran time"
+            aria-label="Mashhad time"
           >
             {time} — {cityLabel}
           </div>
