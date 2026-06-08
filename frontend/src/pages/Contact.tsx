@@ -37,7 +37,7 @@ export function Contact() {
           className="font-mono uppercase text-ink-mute"
           style={{ fontSize: 11, letterSpacing: '0.08em', marginBottom: 24 }}
         >
-          04 / 12 &mdash; {lang === 'fa' ? 'تماس' : 'CONTACT'} &mdash; {lang === 'fa' ? 'مشهد' : 'MASHHAD'}
+          04 / 12 &mdash; {t('hero_lockup_contact')} &mdash; {lang === 'fa' ? 'مشهد' : 'MASHHAD'}
         </div>
         <h1
           className="font-display"

@@ -25,12 +25,9 @@ import { COMPANY } from '@/data/company';
  * footer never shows a broken image.
  */
 export function Enamad({ className = '' }: { className?: string }) {
-  const { lang } = useApp();
+  const { t } = useApp();
   const [imgFailed, setImgFailed] = useState(false);
-  const label =
-    lang === 'fa'
-      ? 'نماد اعتماد الکترونیکی'
-      : 'eNamad — Iranian e-commerce trust seal';
+  const label = t('enamad_alt');
 
   const { id, code } = COMPANY.enamad;
   const registered = Boolean(id && code);

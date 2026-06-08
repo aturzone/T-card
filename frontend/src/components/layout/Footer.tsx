@@ -22,7 +22,7 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <a className="contact-val" href={`mailto:${COMPANY.email}`}>
+                <a className="contact-val" href={`mailto:${COMPANY.email}`} dir="ltr">
                   {COMPANY.email}
                 </a>
               </li>
