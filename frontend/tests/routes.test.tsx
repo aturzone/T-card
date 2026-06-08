@@ -78,3 +78,23 @@ describe('every route renders without crashing', () => {
     expect(reactErrors).toEqual([]);
   });
 });
+
+describe('global footer — contact details + trust seal', () => {
+  test('shows phone, address and a clickable eNamad trust seal', () => {
+    renderAt('/');
+
+    // Phone is a tel: link; address points at the office map.
+    const phone = screen.getByRole('link', { name: /\+98 51 3741 7087/ });
+    expect(phone).toHaveAttribute('href', 'tel:+985137417087');
+    expect(screen.getByText(/Hasheminejad St, Mashhad/)).toBeInTheDocument();
+
+    // eNamad seal links to the live trustseal verification page in a new tab.
+    const seal = screen.getByRole('link', { name: /trust seal/i });
+    expect(seal).toHaveAttribute('target', '_blank');
+    expect(seal.getAttribute('href')).toMatch(/trustseal\.enamad\.ir.*id=734609/);
+    // eNamad requires referrerpolicy=origin and NO rel="noreferrer" — the latter
+    // stops the seal from rendering.
+    expect(seal).toHaveAttribute('referrerpolicy', 'origin');
+    expect(seal.getAttribute('rel') ?? '').not.toContain('noreferrer');
+  });
+});

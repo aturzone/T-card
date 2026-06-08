@@ -103,6 +103,7 @@ export const I18N = {
   f_name:       { en: 'Full name',  fa: 'نام و نام خانوادگی' },
   f_email:      { en: 'Email',      fa: 'ایمیل' },
   f_phone:      { en: 'Phone',      fa: 'تلفن' },
+  f_address:    { en: 'Address',    fa: 'آدرس' },
   f_rec_name:   { en: 'Recipient name', fa: 'نام گیرنده' },
   f_rec_email:  { en: 'Recipient email',fa: 'ایمیل گیرنده' },
   f_message:    { en: 'Private message (optional)', fa: 'پیام خصوصی (اختیاری)' },
@@ -121,6 +122,12 @@ export const I18N = {
   contact_d:    { en: 'Reach the team — usually back within 2 hours.', fa: 'با تیم در تماس باشید — معمولاً ظرف ۲ ساعت پاسخ می‌دهیم.' },
   contact_send: { en: 'Send message', fa: 'ارسال پیام' },
 
+  // Public contact details — displayed in the footer + contact page.
+  // The raw tel: number lives in data/company.ts; keep these in sync.
+  info_phone:   { en: '+98 51 3741 7087', fa: '۰۵۱ ۳۷۴۱۷۰۸۷' },
+  info_address: { en: 'No. 27, Floor 6, Rezvan 7 St, 15-Metri Hasheminejad St, Mashhad, Razavi Khorasan',
+                  fa: 'خراسان رضوی، مشهد، خیابان رضوان ۷، خیابان ۱۵متری هاشمی‌نژاد، پلاک ۲۷، طبقه ۶' },
+
   acc_orders:   { en: 'Orders',     fa: 'سفارش‌ها' },
   acc_saved:    { en: 'Saved cards', fa: 'کارت‌های ذخیره‌شده' },
   acc_profile:  { en: 'Profile',    fa: 'پروفایل' },
@@ -131,8 +138,12 @@ export const I18N = {
   ft_company:   { en: 'Company',    fa: 'شرکت' },
   ft_support:   { en: 'Support',    fa: 'پشتیبانی' },
   ft_legal:     { en: 'Legal',      fa: 'حقوقی' },
+  ft_contact:   { en: 'Contact',    fa: 'تماس با ما' },
   ft_tagline:   { en: 'Gift cards, beautifully delivered. Since 2019.', fa: 'کارت‌های هدیه، با ظرافت تحویل داده شده. از سال ۱۳۹۸.' },
   ft_rights:    { en: '© 2026 T-Card. All rights reserved.', fa: '© ۲۰۲۶ تی‌کارت. تمام حقوق محفوظ است.' },
+
+  // eNamad — Iran's official e-commerce trust seal.
+  enamad_alt:   { en: 'eNamad — Iranian e-commerce trust seal', fa: 'نماد اعتماد الکترونیکی' },
 
   // Wave-2 redesign — page-name lockups + supporting mono labels.
   hero_lockup_brands:   { en: 'BRANDS',        fa: 'برندها' },
@@ -146,6 +157,6 @@ export const I18N = {
   hero_lockup_404:      { en: '404',           fa: '۴۰۴' },
   hero_lockup_checkout: { en: 'CHECKOUT',      fa: 'پرداخت' },
   hero_lockup_home:     { en: 'TCARD',         fa: 'تی‌کارت' },
-  eyebrow_tehran:       { en: 'TEHRAN — ONLINE', fa: 'تهران — آنلاین' },
+  eyebrow_city:         { en: 'MASHHAD — ONLINE', fa: 'مشهد — آنلاین' },
   cta_buy_gift:         { en: 'BUY GIFT →',    fa: 'خرید کارت ←' },
 } satisfies Record<string, LocalizedString>;

@@ -14,7 +14,7 @@ import { CATEGORIES } from '@/data/categories';
 import { TESTIMONIALS } from '@/data/testimonials';
 import type { I18NKey } from '@/data/i18n';
 
-function useTehranClock(lang: 'en' | 'fa') {
+function useIranClock(lang: 'en' | 'fa') {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -107,7 +107,7 @@ export function Home() {
 
   const heroRef = useRef<HTMLElement>(null);
   const scrollProgress = useScrollProgress(heroRef, 72);
-  const time = useTehranClock(lang);
+  const time = useIranClock(lang);
 
   // Show the 3D bust on every viewport width — phones, tablets, desktops —
   // BUT only mount the Canvas after we've confirmed WebGL is available.
@@ -166,8 +166,8 @@ export function Home() {
       kind: 'mono',
       eyebrow: { en: 'T-CARD STUDIO', fa: 'استودیو تی‌کارت' },
       body: {
-        en: 'CONTEMPORARY GIFT CARDS — BASED IN TEHRAN',
-        fa: 'کارت‌های هدیه معاصر — تهران',
+        en: 'CONTEMPORARY GIFT CARDS — BASED IN MASHHAD',
+        fa: 'کارت‌های هدیه معاصر — مشهد',
       },
       range: [0, 0, 0.08, 0.13],
       wipe: 'ltr',
@@ -433,7 +433,7 @@ export function Home() {
 
             {/* Persistent UI — clock, scroll hint, CTA, progress dots */}
             <div className="absolute mono-corner" style={{ top: 24, left: 24 }}>
-              {time} &mdash; {t('eyebrow_tehran')}
+              {time} &mdash; {t('eyebrow_city')}
             </div>
             <div
               className="absolute mono-corner text-right"

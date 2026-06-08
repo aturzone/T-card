@@ -403,6 +403,37 @@ input, select, textarea { font: inherit; color: inherit; }
   .footer ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
   .footer li a { font-size: 14px; color: var(--ink-soft); transition: color var(--dur-fast); }
   .footer li a:hover { color: var(--ink); }
+  /* The footer grid is mono/uppercase; contact values read better in their
+     natural case + a touch larger. */
+  .footer .contact-val { text-transform: none; letter-spacing: 0; font-size: 13px; line-height: 1.5; }
+
+  /* eNamad — Iran's e-commerce trust seal. Always on a white card, the way the
+     official seal ships, so the blue emblem + text keep their contrast. */
+  .enamad-badge {
+    @apply inline-flex items-center;
+    gap: 12px;
+    width: fit-content;
+    padding: 9px 13px;
+    background: #ffffff;
+    border: 1px solid rgba(10, 61, 122, 0.18);
+    border-radius: var(--radius);
+    transition: box-shadow var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+  }
+  .enamad-badge:hover {
+    box-shadow: 0 12px 28px -16px rgba(10, 61, 122, 0.6);
+    transform: translateY(-1px);
+  }
+  /* Official seal: just the image from trustseal.enamad.ir, tighter padding. */
+  .enamad-badge--official { padding: 8px; gap: 0; }
+  .enamad-img { height: 96px; width: auto; display: block; }
+  .enamad-badge svg { width: 44px; height: 44px; flex: none; }
+  .enamad-text {
+    display: flex; flex-direction: column; gap: 1px;
+    direction: rtl; text-align: right;
+    font-family: "Estedad", "Vazirmatn", var(--font-body);
+  }
+  .enamad-text strong { font-size: 14px; font-weight: 700; color: #0a3d7a; line-height: 1.25; text-transform: none; letter-spacing: 0; }
+  .enamad-sub { font-size: 11.5px; color: #2a5c96; line-height: 1.25; text-transform: none; letter-spacing: 0; }
 
   /* Cart drawer */
   .drawer-backdrop {
